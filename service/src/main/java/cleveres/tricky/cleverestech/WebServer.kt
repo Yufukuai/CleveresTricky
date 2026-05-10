@@ -1289,7 +1289,7 @@ class WebServer(
         button.primary:hover { background: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
         button.danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
         button.danger:hover { background: var(--danger); color: #fff; }
-        input[type="checkbox"].toggle { appearance: none; width: 52px; height: 32px; background: #333; border-radius: 16px; position: relative; cursor: pointer; transition: background 0.3s; }
+        input[type="checkbox"].toggle { appearance: none; width: 52px; height: 32px; background: #333; border-radius: 16px; position: relative; cursor: pointer; transition: background 0.3s; border: 6px solid transparent; background-clip: padding-box; box-sizing: content-box; margin: -6px; }
         input[type="checkbox"].toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; background: #fff; border-radius: 50%; transition: transform 0.3s; }
         input[type="checkbox"].toggle:checked { background: var(--accent); }
         input[type="checkbox"].toggle:checked::after { transform: translateX(20px); }

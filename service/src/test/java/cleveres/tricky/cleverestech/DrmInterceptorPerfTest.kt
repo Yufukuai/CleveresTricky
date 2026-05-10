@@ -73,7 +73,7 @@ class DrmInterceptorPerfTest {
         println("BASELINE_OLD_LOGIC_NS: $oldTime")
         println("OPTIMIZED_NEW_LOGIC_NS: $newTime")
         val speedup = (oldTime.toDouble() / newTime.toDouble())
-        println("SPEEDUP: ${String.format(\"%.2f\", speedup)}x")
+        println("SPEEDUP: ${String.format("%.2f", speedup)}x")
 
         // Output for automated parsing if needed
         System.err.println("PERF_RESULTS: old=$oldTime ns, new=$newTime ns, speedup=$speedup")
