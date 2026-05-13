@@ -760,7 +760,6 @@ pub unsafe extern "C" fn rust_prop_set(
     }));
 }
 
-
 /* ==== Play Integrity Protection ==== */
 
 #[no_mangle]
