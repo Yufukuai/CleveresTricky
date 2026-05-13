@@ -763,6 +763,7 @@ pub unsafe extern "C" fn rust_prop_set(
 /* ==== Play Integrity Protection ==== */
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn rust_is_integrity_service_descriptor(
     desc_ptr: *const u8,
     desc_len: usize,
@@ -785,6 +786,7 @@ pub unsafe extern "C" fn rust_is_integrity_service_descriptor(
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn rust_is_recall_related_transaction(
     code: u32,
     desc_ptr: *const u8,
@@ -808,6 +810,7 @@ pub unsafe extern "C" fn rust_is_recall_related_transaction(
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn rust_is_integrity_verdict_transaction(
     code: u32,
     desc_ptr: *const u8,
@@ -831,6 +834,7 @@ pub unsafe extern "C" fn rust_is_integrity_verdict_transaction(
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn rust_is_remediation_dialog_intent(
     action_ptr: *const u8,
     action_len: usize,
