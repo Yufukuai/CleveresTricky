@@ -2123,7 +2123,7 @@ class WebServer(
                         loadKeyboxes();
                         return;
                     }
-                    notify('Uploaded');
+                    notify('Uploaded Successfully', 'normal');
                     document.getElementById('kbContent').value = '';
                     try {
                         const body = await res.clone().json();
