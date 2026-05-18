@@ -237,6 +237,16 @@ bool rust_parse_binder_stream(const uint8_t *buffer_ptr,
                               size_t max_txns,
                               size_t *out_txn_count);
 
+
+
+/* ==== Play Integrity Protection ==== */
+bool rust_is_integrity_service_descriptor(const uint8_t* desc_ptr, size_t desc_len);
+bool rust_is_recall_related_transaction(uint32_t code, const uint8_t* desc_ptr, size_t desc_len);
+bool rust_is_integrity_verdict_transaction(uint32_t code, const uint8_t* desc_ptr, size_t desc_len);
+bool rust_is_remediation_dialog_intent(const uint8_t* action_ptr, size_t action_len);
+void rust_record_token_request(void);
+bool rust_is_request_rate_normal(void);
+
 #ifdef __cplusplus
 }
 #endif

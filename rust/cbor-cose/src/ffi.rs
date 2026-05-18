@@ -759,3 +759,114 @@ pub unsafe extern "C" fn rust_prop_set(
         }
     }));
 }
+
+/* ==== Play Integrity Protection ==== */
+
+#[no_mangle]
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn rust_is_integrity_service_descriptor(
+    desc_ptr: *const u8,
+    desc_len: usize,
+) -> bool {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if desc_ptr.is_null() || desc_len == 0 {
+            return false;
+        }
+        let slice = match unsafe { validate_slice_args(desc_ptr, desc_len) } {
+            Some(s) => s,
+            None => return false,
+        };
+        let desc_str = match std::str::from_utf8(slice) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        crate::play_integrity::is_integrity_service_descriptor(desc_str)
+    }))
+    .unwrap_or(false)
+}
+
+#[no_mangle]
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn rust_is_recall_related_transaction(
+    code: u32,
+    desc_ptr: *const u8,
+    desc_len: usize,
+) -> bool {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if desc_ptr.is_null() || desc_len == 0 {
+            return false;
+        }
+        let slice = match unsafe { validate_slice_args(desc_ptr, desc_len) } {
+            Some(s) => s,
+            None => return false,
+        };
+        let desc_str = match std::str::from_utf8(slice) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        crate::play_integrity::is_recall_related_transaction(code, desc_str)
+    }))
+    .unwrap_or(false)
+}
+
+#[no_mangle]
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn rust_is_integrity_verdict_transaction(
+    code: u32,
+    desc_ptr: *const u8,
+    desc_len: usize,
+) -> bool {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if desc_ptr.is_null() || desc_len == 0 {
+            return false;
+        }
+        let slice = match unsafe { validate_slice_args(desc_ptr, desc_len) } {
+            Some(s) => s,
+            None => return false,
+        };
+        let desc_str = match std::str::from_utf8(slice) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        crate::play_integrity::is_integrity_verdict_transaction(code, desc_str)
+    }))
+    .unwrap_or(false)
+}
+
+#[no_mangle]
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn rust_is_remediation_dialog_intent(
+    action_ptr: *const u8,
+    action_len: usize,
+) -> bool {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if action_ptr.is_null() || action_len == 0 {
+            return false;
+        }
+        let slice = match unsafe { validate_slice_args(action_ptr, action_len) } {
+            Some(s) => s,
+            None => return false,
+        };
+        let action_str = match std::str::from_utf8(slice) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        crate::play_integrity::is_remediation_dialog_intent(action_str)
+    }))
+    .unwrap_or(false)
+}
+
+#[no_mangle]
+pub extern "C" fn rust_record_token_request() {
+    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        crate::play_integrity::record_token_request();
+    }));
+}
+
+#[no_mangle]
+pub extern "C" fn rust_is_request_rate_normal() -> bool {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        crate::play_integrity::is_request_rate_normal()
+    }))
+    .unwrap_or(true) // Fail open
+}

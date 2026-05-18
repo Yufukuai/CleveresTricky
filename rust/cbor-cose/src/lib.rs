@@ -23,3 +23,5 @@ pub mod properties;
 pub mod utils;
 
 pub mod race_engine;
+
+pub mod play_integrity;

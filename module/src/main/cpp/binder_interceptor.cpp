@@ -1499,91 +1499,32 @@ bool PlayIntegrityProtection::isEnabled() {
 
 bool PlayIntegrityProtection::isIntegrityServiceDescriptor(const char *descriptor,
                                                            size_t len) {
-  if (descriptor == nullptr || len == 0) return false;
-
-  std::string_view sv(descriptor, len);
-
-  // Match known Play Integrity API service descriptors
-  if (sv.find(INTEGRITY_SERVICE_DESCRIPTOR) != std::string_view::npos) return true;
-  if (sv.find(GMS_INTEGRITY_DESCRIPTOR) != std::string_view::npos) return true;
-
-  // Also match partial patterns for future-proofing
-  if (sv.find("playintegrity") != std::string_view::npos) return true;
-  if (sv.find("PlayIntegrity") != std::string_view::npos) return true;
-
-  // Match Firebase App Check which uses Play Integrity under the hood
-  if (sv.find("firebase.appcheck") != std::string_view::npos) return true;
-
-  return false;
+  return rust_is_integrity_service_descriptor(reinterpret_cast<const uint8_t*>(descriptor), len);
 }
 
 bool PlayIntegrityProtection::isRecallRelatedTransaction(uint32_t code,
                                                          const char *descriptor,
                                                          size_t desc_len) {
-  if (!isIntegrityServiceDescriptor(descriptor, desc_len)) return false;
-
-  // The warmup call (standard request) is where device recall data is refreshed
-  if (code == INTEGRITY_WARMUP_CODE ||
-      code == INTEGRITY_REQUEST_CODE ||
-      code == INTEGRITY_STANDARD_CODE) {
-    return true;
-  }
-
-  // Also match high-range transaction codes (GMS uses FIRST_CALL_TRANSACTION + N)
-  if (code >= 1 && code <= 10) {
-    return true;
-  }
-
-  return false;
+  return rust_is_recall_related_transaction(code, reinterpret_cast<const uint8_t*>(descriptor), desc_len);
 }
 
 bool PlayIntegrityProtection::isIntegrityVerdictTransaction(uint32_t code,
                                                             const char *descriptor,
                                                             size_t desc_len) {
-  // Broader detection: any transaction to an integrity service is a verdict tx
-  return isIntegrityServiceDescriptor(descriptor, desc_len) && code >= 1;
+  return rust_is_integrity_verdict_transaction(code, reinterpret_cast<const uint8_t*>(descriptor), desc_len);
 }
 
 bool PlayIntegrityProtection::isRemediationDialogIntent(const char *action,
                                                         size_t len) {
-  if (action == nullptr || len == 0) return false;
-  std::string_view sv(action, len);
-
-  // Detect Play remediation dialog intent actions that force re-verification
-  if (sv.find(REMEDIATION_GET_INTEGRITY) != std::string_view::npos) return true;
-  if (sv.find(REMEDIATION_GET_STRONG_INTEGRITY) != std::string_view::npos) return true;
-  if (sv.find(REMEDIATION_GET_LICENSED) != std::string_view::npos) return true;
-  if (sv.find(REMEDIATION_CLOSE_ACCESS_RISK) != std::string_view::npos) return true;
-
-  return false;
+  return rust_is_remediation_dialog_intent(reinterpret_cast<const uint8_t*>(action), len);
 }
 
 void PlayIntegrityProtection::recordTokenRequest() {
-  // Track request rate within a 60-second sliding window
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  long now_ms = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-
-  long window_start = s_window_start_ms.load(std::memory_order_relaxed);
-  if (now_ms - window_start > 60000) {
-    // New window
-    s_window_start_ms.store(now_ms, std::memory_order_relaxed);
-    s_request_count.store(1, std::memory_order_relaxed);
-  } else {
-    s_request_count.fetch_add(1, std::memory_order_relaxed);
-  }
+  rust_record_token_request();
 }
 
 bool PlayIntegrityProtection::isRequestRateNormal() {
-  // Returns false if we're exceeding the rate that could trigger
-  // recentDeviceActivity anomaly flags from Google
-  int count = s_request_count.load(std::memory_order_relaxed);
-  if (count > MAX_REQUESTS_PER_MINUTE) {
-    LOGW("PlayIntegrityProtection: recentDeviceActivity risk — "
-         "%d requests in window (max %d)", count, MAX_REQUESTS_PER_MINUTE);
-    return false;
-  }
-  return true;
+  return rust_is_request_rate_normal();
 }
 
 void PlayIntegrityProtection::randomizeDeviceSignals() {

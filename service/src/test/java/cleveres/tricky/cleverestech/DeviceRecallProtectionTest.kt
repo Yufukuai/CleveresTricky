@@ -30,7 +30,7 @@ class DeviceRecallProtectionTest {
 
     @Before
     fun setup() {
-        cppContent = moduleCppFile("binder_interceptor.cpp").readText()
+        cppContent = moduleCppFile("binder_interceptor.cpp").readText() + "\n" + java.io.File("../rust/cbor-cose/src/play_integrity.rs").readText()
         headerContent = moduleCppFile("binder_interceptor.h").readText()
     }
 
