@@ -1256,7 +1256,7 @@ class WebServer(
     <style>
         :root { --bg: #0B0B0C; --fg: #E5E7EB; --accent: #D1D5DB; --panel: #161616; --border: #333; --input-bg: #1A1A1A; --success: #34D399; --danger: #EF4444; }
         body { background-color: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-        .island-container { display: flex; justify-content: center; position: fixed; top: 10px; width: 100%; z-index: 1000; pointer-events: none; }
+        .island-container { display: flex; justify-content: center; position: fixed; top: 20px; width: 100%; z-index: 1000; pointer-events: none; }
         .island { background: #000; color: #fff; border-radius: 30px; min-height: 35px; width: 120px; display: flex; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 0.8em; font-weight: 500; opacity: 0; transform: translateY(-20px); pointer-events: auto; }
         .island.active { width: auto; min-width: 250px; padding: 8px 12px 8px 24px; opacity: 1; transform: translateY(0); font-size: 0.9em; min-height: 44px; }
         .island.error { background: #330000; border: 1px solid var(--danger); }
@@ -1323,8 +1323,8 @@ class WebServer(
         button.confirm-active { background: var(--danger) !important; color: #fff !important; font-weight: bold; border-color: var(--danger) !important; }
         .res-desc { display: block; font-size: 0.8em; color: #888; margin-top: 4px; line-height: 1.3; }
         .search-container { position: relative; margin-bottom: 10px; }
-        .search-container input[type="search"] { width: 100%; padding-right: 30px; }
-        .clear-btn { position: absolute; right: 0; top: 0; height: 100%; min-height: 44px; min-width: 44px; background: transparent; border: none; color: #888; font-size: 1.2em; padding: 0; cursor: pointer; display: none; touch-action: manipulation; }
+        .search-container input[type="search"] { width: 100%; padding-right: 44px; }
+        .clear-btn { position: absolute; right: 0; top: 0; height: 100%; min-height: 44px; min-width: 44px; background: transparent; border: none; color: #888; font-size: 1.2em; padding: 0; cursor: pointer; display: none; touch-action: manipulation; display: flex; align-items: center; justify-content: center; }
 
 
 
@@ -1340,7 +1340,7 @@ class WebServer(
 
         .pwd-wrapper { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 5px; }
         .pwd-wrapper input { margin-bottom: 0 !important; padding-right: 60px; }
-        .pwd-toggle { position: absolute; right: 5px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 0.85em; padding: 5px 10px; min-height: 44px; min-width: 44px; text-transform: none; }
+        .pwd-toggle { position: absolute; right: 5px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-size: 0.85em; padding: 5px 10px; min-height: 44px; min-width: 44px; text-transform: none; touch-action: manipulation; }
         .pwd-toggle:hover { color: #fff; background: transparent; }
         @media screen and (max-width: 600px) {
             .grid-2 { grid-template-columns: 1fr; }
@@ -1817,9 +1817,11 @@ class WebServer(
             const originalHtml = btn.innerHTML;
             navigator.clipboard.writeText(text).then(() => {
                 btn.innerText = 'Copied';
-                notify(msg);
+                btn.classList.add('valid');
+                notify(msg, 'normal');
                 setTimeout(() => btn.innerHTML = originalHtml, 2000);
-            }).catch(() => { notify('Copy failed', 'error'); });
+                setTimeout(() => btn.classList.remove('valid'), 2000);
+            }).catch(() => { notify('Copy failed. Check permissions.', 'error'); });
         }
         let notifyTimeout;
         function notify(msg, type = 'normal') {
@@ -3043,6 +3045,12 @@ class WebServer(
             e.preventDefault();
             e.stopPropagation();
         }
+
+        window.addEventListener('dragenter', preventDefaults, false);
+        window.addEventListener('dragover', preventDefaults, false);
+        window.addEventListener('dragleave', preventDefaults, false);
+        window.addEventListener('drop', preventDefaults, false);
+
 
         function highlight(e) {
             dropZone.classList.add('drag-over');
