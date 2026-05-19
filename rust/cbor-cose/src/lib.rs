@@ -25,3 +25,5 @@ pub mod utils;
 pub mod race_engine;
 
 pub mod play_integrity;
+pub mod apex;
+pub mod hardware_sim;

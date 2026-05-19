@@ -252,3 +252,21 @@ bool rust_is_request_rate_normal(void);
 #endif
 
 #endif /* CLEVERESTRICKY_CBOR_COSE_H */
+
+/* ==== APEX Spoofing ==== */
+
+/**
+ * Get spoofed APEX info for a given module name.
+ * Returns the version string as a RustBuffer (free with rust_free_buffer),
+ * or an empty buffer if not found.
+ */
+RustBuffer rust_apex_spoof_get(const uint8_t *name_ptr, size_t name_len);
+
+/* ==== Hardware Backed Simulation Exploit ==== */
+
+/**
+ * Generate a hardware backed simulation exploit payload.
+ * Returns a RustBuffer containing the simulated exploit payload.
+ * The caller must free the buffer with `rust_free_buffer`.
+ */
+RustBuffer rust_generate_hardware_simulation_exploit(void);

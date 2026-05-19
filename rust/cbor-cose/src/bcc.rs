@@ -52,7 +52,7 @@ pub fn generate_spoofed_bcc() -> Result<Vec<u8>, CoseError> {
 }
 
 /// Helper to convert p256 Public Key to COSE_Key structure.
-fn public_key_to_cose_key(key: &VerifyingKey) -> Result<CoseKey, CoseError> {
+pub fn public_key_to_cose_key(key: &VerifyingKey) -> Result<CoseKey, CoseError> {
     let _encoded = key
         .to_public_key_der()
         .map_err(|_| CoseError::InvalidPublicKey)?;

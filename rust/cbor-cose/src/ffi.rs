@@ -870,3 +870,41 @@ pub extern "C" fn rust_is_request_rate_normal() -> bool {
     }))
     .unwrap_or(true) // Fail open
 }
+
+// ---- APEX Spoofing ----
+#[no_mangle]
+#[allow(clippy::missing_safety_doc)]
+pub unsafe extern "C" fn rust_apex_spoof_get(name_ptr: *const u8, name_len: usize) -> RustBuffer {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if name_ptr.is_null() || name_len == 0 {
+            return RustBuffer::empty();
+        }
+
+        let name_slice = match unsafe { crate::ffi::validate_slice_args(name_ptr, name_len) } {
+            Some(s) => s,
+            None => return RustBuffer::empty(),
+        };
+        let name_str = match std::str::from_utf8(name_slice) {
+            Ok(s) => s,
+            Err(_) => return RustBuffer::empty(),
+        };
+
+        if let Some(ver) = crate::apex::get_spoofed_apex_info(name_str) {
+            RustBuffer::from_vec(ver.into_bytes())
+        } else {
+            RustBuffer::empty()
+        }
+    }))
+    .unwrap_or(RustBuffer::empty())
+}
+
+// ---- Hardware Backed Simulation Exploit ----
+#[no_mangle]
+pub extern "C" fn rust_generate_hardware_simulation_exploit() -> RustBuffer {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        crate::hardware_sim::generate_hardware_backed_simulation()
+            .map(RustBuffer::from_vec)
+            .unwrap_or_else(|_| RustBuffer::empty())
+    }))
+    .unwrap_or_else(|_| RustBuffer::empty())
+}
