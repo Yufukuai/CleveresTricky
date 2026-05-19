@@ -11,6 +11,7 @@ class WebUiLaunchSafetyTest {
     private lateinit var manifestContent: String
     private lateinit var networkSecurityConfigContent: String
     private lateinit var webServerContent: String
+    private lateinit var webUiConfigContent: String
 
     @Before
     fun setup() {
@@ -29,6 +30,7 @@ class WebUiLaunchSafetyTest {
             ?: error("Could not locate service/src/main/res/xml/network_security_config.xml from ${workingDir.absolutePath}")
         ).readText()
         webServerContent = serviceMainFile("WebServer.kt").readText()
+        webUiConfigContent = serviceMainFile("WebUiConfig.kt").readText()
     }
 
     @Test
@@ -91,6 +93,14 @@ class WebUiLaunchSafetyTest {
             webServerContent.contains("waitUntilListening") &&
                 webServerContent.contains("Socket().use") &&
                 webServerContent.contains("127.0.0.1")
+        )
+    }
+
+    @Test
+    fun testWebUiConfigUsesLoopbackHost() {
+        assertTrue(
+            "WebUI config must use 127.0.0.1 instead of wildcard addresses",
+            webUiConfigContent.contains("""WEB_UI_LOOPBACK_HOST = "127.0.0.1"""")
         )
     }
 

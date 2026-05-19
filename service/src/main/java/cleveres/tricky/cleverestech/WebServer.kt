@@ -53,7 +53,7 @@ class WebServer(
             Logger.e("failed to set permissions for ${f.name}", t)
         }
     }
-) : NanoHTTPD(requestedPort) {
+) : NanoHTTPD(WEB_UI_LOOPBACK_HOST, requestedPort) {
 
     suspend fun startAsync(timeout: Int = 5000, daemon: Boolean = true) {
         Logger.d("WebServer: Starting on $WEB_UI_LOOPBACK_HOST:$requestedPort (timeout=$timeout daemon=$daemon)")
@@ -78,11 +78,15 @@ class WebServer(
         timeoutMs: Long = WEB_UI_READINESS_TIMEOUT_MS,
         pollMs: Long = WEB_UI_READINESS_POLL_MS
     ) {
-        val port = listeningPort
-        if (port <= 0) {
-            throw IOException("WebServer: Invalid listening port $port after start")
-        }
         val deadline = System.nanoTime() + timeoutMs * 1_000_000L
+        var port = listeningPort
+        while (port <= 0 && System.nanoTime() < deadline) {
+            delay(pollMs)
+            port = listeningPort
+        }
+        if (port <= 0) {
+            throw IOException("WebServer: Invalid listening port $port after waiting ${timeoutMs}ms")
+        }
         var lastError: IOException? = null
         while (System.nanoTime() < deadline) {
             try {
