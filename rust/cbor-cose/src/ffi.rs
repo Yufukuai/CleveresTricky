@@ -889,8 +889,8 @@ pub unsafe extern "C" fn rust_apex_spoof_get(name_ptr: *const u8, name_len: usiz
             Err(_) => return RustBuffer::empty(),
         };
 
-        if let Some(ver) = crate::apex::get_spoofed_apex_info(name_str) {
-            RustBuffer::from_vec(ver.into_bytes())
+        if let Some(vec) = crate::apex::get_spoofed_apex_info(name_str, |s| s.as_bytes().to_vec()) {
+            RustBuffer::from_vec(vec)
         } else {
             RustBuffer::empty()
         }
