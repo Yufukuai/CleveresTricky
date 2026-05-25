@@ -26,5 +26,5 @@ android {
 
 dependencies {
     compileOnly(libs.annotation)
-    implementation("org.json:json:20251224")
+    implementation("org.json:json:20260522")
 }
