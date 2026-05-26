@@ -26,6 +26,7 @@ object KeyboxVerifier {
 
     private var CRL_URL = "https://android.googleapis.com/attestation/status"
     private val HASH_LENGTHS = listOf(32, 40, 64)
+    private val ZEROS = "0".repeat(64)
 
     @androidx.annotation.VisibleForTesting
     fun setCrlUrlForTesting(url: String) {
@@ -261,14 +262,15 @@ object KeyboxVerifier {
 
         if (isDecimal && decStr.isNotEmpty()) {
             try {
-                val hexStr = java.math.BigInteger(decStr).toString(16).lowercase()
+                val hexStr = java.math.BigInteger(decStr).toString(16)
                 set.add(hexStr)
 
                 // BigInteger removes leading zeros. Hashes are fixed length (MD5=32, SHA1=40, SHA256=64).
                 // If this decimal is actually a hash, we might need the padded version.
+                val hexLen = hexStr.length
                 for (targetLen in HASH_LENGTHS) {
-                    if (hexStr.length < targetLen) {
-                        set.add(hexStr.padStart(targetLen, '0'))
+                    if (hexLen < targetLen) {
+                        set.add(ZEROS.substring(0, targetLen - hexLen) + hexStr)
                     }
                 }
 
@@ -293,7 +295,7 @@ object KeyboxVerifier {
             // Try treating as Hex (literal) as fallback
             if (isHex(decStr)) {
                 try {
-                    val hexStr = java.math.BigInteger(decStr, 16).toString(16).lowercase()
+                    val hexStr = java.math.BigInteger(decStr, 16).toString(16)
                     set.add(hexStr)
                     added = true
                 } catch (e: Exception) {
