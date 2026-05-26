@@ -39,7 +39,6 @@ class SecurityLevelInterceptor(
 
         // Concurrent op tracking
         private val activeOps = ConcurrentHashMap<Int, LinkedList<Long>>()
-        private val opLimitLock = Any()
 
         const val STRONGBOX_MAX_CONCURRENT_OPS = 4
         const val TEE_MAX_CONCURRENT_OPS = 15
@@ -55,8 +54,9 @@ class SecurityLevelInterceptor(
         val limit = if (level == SecurityLevel.STRONGBOX) STRONGBOX_MAX_CONCURRENT_OPS else TEE_MAX_CONCURRENT_OPS
         val now = SystemClock.uptimeMillis()
 
-        synchronized(opLimitLock) {
-            val ops = activeOps.getOrPut(callingUid) { LinkedList() }
+        var allowed = false
+        activeOps.compute(callingUid) { _, existingOps ->
+            val ops = existingOps ?: LinkedList()
 
             // Prune ops older than 10 seconds (arbitrary timeout to prevent leaks)
             while (ops.isNotEmpty() && now - (ops.firstOrNull() ?: 0L) > 10000) {
@@ -67,12 +67,14 @@ class SecurityLevelInterceptor(
                 // Evict oldest (LRU pruning) - simulate INVALID_OPERATION_HANDLE (-28) or TOO_MANY_OPERATIONS (-29)
                 // In a real scenario we'd return a specific error code, but here we just reject the new one
                 Logger.e("Concurrent operation limit exceeded for uid=$callingUid on level=$level (limit=$limit)")
-                return false
+                allowed = false
+            } else {
+                ops.addLast(now)
+                allowed = true
             }
-
-            ops.addLast(now)
-            return true
+            ops
         }
+        return allowed
     }
 
     override fun onPreTransact(
