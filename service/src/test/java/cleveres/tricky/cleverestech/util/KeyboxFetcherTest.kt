@@ -38,7 +38,7 @@ class KeyboxFetcherTest {
 
     class FakeNetworkClient(private val response: String?) : KeyboxFetcher.NetworkClient {
         var capturedUrl: String? = null
-        override fun fetch(url: String): String? {
+        override suspend fun fetch(url: String): String? {
             capturedUrl = url
             return response
         }

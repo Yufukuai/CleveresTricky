@@ -4,8 +4,12 @@ import cleveres.tricky.cleverestech.Config
 import cleveres.tricky.cleverestech.Logger
 import cleveres.tricky.cleverestech.keystore.CertHack
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.net.URI
+import java.time.Duration
+import kotlinx.coroutines.future.await
 import java.security.MessageDigest
 import java.security.PrivateKey
 import java.security.cert.Certificate
@@ -23,42 +27,83 @@ import kotlinx.coroutines.delay
 class KeyboxFetcher(private val networkClient: NetworkClient = DefaultNetworkClient(), private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.IO) {
 
     interface NetworkClient {
-        fun fetch(url: String): String?
+        suspend fun fetch(url: String): String?
     }
 
     class DefaultNetworkClient : NetworkClient {
+        private val httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(15))
+            .build()
 
-        override fun fetch(url: String): String? {
+        override suspend fun fetch(url: String): String? {
             return try {
-                val urlObj = URL(url)
-                val conn = urlObj.openConnection() as HttpURLConnection
-                conn.connectTimeout = 15000
-                conn.readTimeout = 15000
-                conn.requestMethod = "GET"
-                if (conn.responseCode == 200) {
-                    val length = conn.contentLength
+                val request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(15))
+                    .GET()
+                    .build()
+
+                val bodyHandler = HttpResponse.BodyHandler<String?> { responseInfo ->
+                    val length = responseInfo.headers().firstValueAsLong("Content-Length").orElse(-1L)
                     if (length > MAX_FILE_SIZE) {
                         Logger.e("Fetcher: File too large ($length bytes)")
-                        return null
+                        return@BodyHandler HttpResponse.BodySubscribers.replacing(null)
                     }
 
-                    val sb = StringBuilder()
-                    val buffer = CharArray(8192)
-                    var read: Int
-                    var total = 0
-                    conn.inputStream.bufferedReader().use { reader ->
-                        while (reader.read(buffer).also { read = it } != -1) {
-                            total += read
-                            if (total > MAX_FILE_SIZE) {
-                                Logger.e("Fetcher: File exceeds size limit")
-                                return null
+                    val stringSubscriber = HttpResponse.BodySubscribers.ofString(java.nio.charset.StandardCharsets.UTF_8)
+                    var totalBytes = 0L
+
+                    HttpResponse.BodySubscribers.fromSubscriber(
+                        object : java.util.concurrent.Flow.Subscriber<MutableList<java.nio.ByteBuffer>> {
+                            private var subscription: java.util.concurrent.Flow.Subscription? = null
+                            private var overLimit = false
+
+                            override fun onSubscribe(s: java.util.concurrent.Flow.Subscription) {
+                                subscription = s
+                                stringSubscriber.onSubscribe(s)
                             }
-                            sb.append(buffer, 0, read)
+
+                            override fun onNext(item: MutableList<java.nio.ByteBuffer>) {
+                                if (overLimit) return
+                                for (buffer in item) {
+                                    totalBytes += buffer.remaining()
+                                }
+                                if (totalBytes > MAX_FILE_SIZE) {
+                                    Logger.e("Fetcher: File body exceeds size limit during download")
+                                    overLimit = true
+                                    subscription?.cancel()
+                                    stringSubscriber.onError(java.io.IOException("Size limit exceeded"))
+                                    return
+                                }
+                                stringSubscriber.onNext(item)
+                            }
+
+                            override fun onError(throwable: Throwable) {
+                                stringSubscriber.onError(throwable)
+                            }
+
+                            override fun onComplete() {
+                                if (!overLimit) {
+                                    stringSubscriber.onComplete()
+                                }
+                            }
+                        },
+                        {
+                            try {
+                                stringSubscriber.body.toCompletableFuture().join()
+                            } catch (e: Exception) {
+                                null
+                            }
                         }
-                    }
-                    sb.toString()
+                    )
+                }
+
+                val response = httpClient.sendAsync(request, bodyHandler).await()
+
+                if (response.statusCode() == 200) {
+                    response.body()
                 } else {
-                    Logger.e("Fetcher: Failed to fetch $url: ${conn.responseCode}")
+                    Logger.e("Fetcher: Failed to fetch $url: ${response.statusCode()}")
                     null
                 }
             } catch (e: Exception) {
