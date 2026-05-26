@@ -2160,6 +2160,7 @@ class WebServer(
             let filename = filenameInput || 'keybox.xml';
             if (!filename.endsWith('.xml')) filename += '.xml';
 
+            notify('Saving...', 'working');
             try {
                 const res = await fetchAuth('/api/upload_keybox', {
                     method: 'POST',
@@ -2321,6 +2322,7 @@ class WebServer(
         async function verifyKeyboxes() {
             const resultDiv = document.getElementById('verifyResult');
             resultDiv.innerHTML = '<div style="color:#888;">Verifying... Please wait.</div>';
+            notify('Verifying...', 'working');
             try {
                 const res = await fetchAuth('/api/verify_keyboxes', { method: 'POST' });
                 if (!res.ok) {
@@ -2536,6 +2538,7 @@ class WebServer(
 
                  // 5. Save
                  const newContent = updatedLines.join('\n');
+                 notify('Saving Configuration...', 'working');
                  const saveRes = await fetchAuth('/api/save', {
                      method: 'POST',
                      body: new URLSearchParams({ filename: 'spoof_build_vars', content: newContent })
@@ -2639,6 +2642,7 @@ class WebServer(
             appRules.splice(idx, 1); renderAppTable();
         }
         async function saveAppConfig() {
+            notify('Saving App Config...', 'working');
             try {
                 const res = await fetchAuth(getAuthUrl('/api/app_config_structured'), { method: 'POST', body: new URLSearchParams({ data: JSON.stringify(appRules) }) });
                 const txt = await res.text();
@@ -2771,6 +2775,7 @@ class WebServer(
                 for (const [key, val] of Object.entries(locationKeys)) {
                     if (!processedKeys.has(key)) updatedLines.push(key + '=' + val);
                 }
+                notify('Saving Location Settings...', 'working');
                 const saveRes = await fetchAuth('/api/save', {
                     method: 'POST',
                     body: new URLSearchParams({ filename: 'spoof_build_vars', content: updatedLines.join('\n') + '\n' })
