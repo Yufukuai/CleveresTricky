@@ -141,7 +141,7 @@ class CboxManagerSafetyTest {
     fun testCleansUpRemovedFiles() {
         assertTrue(
             "refresh() must clean up cache for removed CBOX files",
-            cboxManagerContent.contains("removedKeys") || cboxManagerContent.contains("toRemove")
+            cboxManagerContent.contains("cacheIt.remove()") || cboxManagerContent.contains("lockedFiles.retainAll")
         )
     }
 
