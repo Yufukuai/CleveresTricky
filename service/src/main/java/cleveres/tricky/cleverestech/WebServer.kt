@@ -766,10 +766,10 @@ class WebServer(
                                 }
 
                                 if (pkg.isNotEmpty()) {
-                                    if (pkg.matches(PKG_NAME_REGEX)) {
-                                        val isTmplValid = tmpl.isEmpty() || tmpl.matches(TEMPLATE_NAME_REGEX)
-                                        val isKbValid = kb.isEmpty() || kb.matches(KEYBOX_FILENAME_REGEX)
-                                        val isPermsValid = perms.isEmpty() || perms.matches(PERMISSIONS_REGEX)
+                                    if (isValidPkg(pkg)) {
+                                        val isTmplValid = tmpl.isEmpty() || isValidTemplate(tmpl)
+                                        val isKbValid = kb.isEmpty() || isValidKeybox(kb)
+                                        val isPermsValid = perms.isEmpty() || isValidPermissions(perms)
                                         if (isTmplValid && isKbValid && isPermsValid) {
                                             val obj = JSONObject()
                                             obj.put("package", pkg)
@@ -815,10 +815,10 @@ class WebServer(
                              }
                              permsStr = list.joinToString(",")
                          }
-                         if (!pkg.matches(PKG_NAME_REGEX)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input: invalid characters")
-                         if (tmpl != "null" && !tmpl.matches(TEMPLATE_NAME_REGEX)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
-                         if (kb != "null" && !kb.matches(KEYBOX_FILENAME_REGEX)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
-                         if (permsStr != "null" && !permsStr.matches(PERMISSIONS_REGEX)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
+                         if (!isValidPkg(pkg)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input: invalid characters")
+                         if (tmpl != "null" && !isValidTemplate(tmpl)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
+                         if (kb != "null" && !isValidKeybox(kb)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
+                         if (permsStr != "null" && !isValidPermissions(permsStr)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
                          if (pkg.contains(WHITESPACE_FIND_REGEX)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
                          sb.append("$pkg $tmpl $kb $permsStr\n")
                      }
@@ -3102,6 +3102,50 @@ class WebServer(
     }
 
     companion object {
+
+        fun isValidPkg(s: String): Boolean {
+            if (s.isEmpty()) return false
+            for (i in 0 until s.length) {
+                val c = s[i]
+                if (!(c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c == '_' || c == '.' || c == '*')) {
+                    return false
+                }
+            }
+            return true
+        }
+
+        fun isValidTemplate(s: String): Boolean {
+            if (s.isEmpty()) return false
+            for (i in 0 until s.length) {
+                val c = s[i]
+                if (!(c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c == '_' || c == '-')) {
+                    return false
+                }
+            }
+            return true
+        }
+
+        fun isValidKeybox(s: String): Boolean {
+            if (s.isEmpty()) return false
+            for (i in 0 until s.length) {
+                val c = s[i]
+                if (!(c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c == '_' || c == '.' || c == '-')) {
+                    return false
+                }
+            }
+            return true
+        }
+
+        fun isValidPermissions(s: String): Boolean {
+            if (s.isEmpty()) return false
+            for (i in 0 until s.length) {
+                val c = s[i]
+                if (!(c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c == '_' || c == '.' || c == ',')) {
+                    return false
+                }
+            }
+            return true
+        }
         fun isSafeHost(host: String?): Boolean {
             if (host == null) return false
             val colonIdx = host.indexOf(':')
@@ -3162,28 +3206,28 @@ class WebServer(
                      while (idx < len && !trimmed[idx].isWhitespace()) idx++
                      val pkg = trimmed.substring(start, idx)
 
-                     if (!pkg.matches(PKG_NAME_REGEX)) return@all false
+                     if (!isValidPkg(pkg)) return@all false
 
                      while (idx < len && trimmed[idx].isWhitespace()) idx++
                      if (idx < len) {
                          start = idx
                          while (idx < len && !trimmed[idx].isWhitespace()) idx++
                          val tmplStr = trimmed.substring(start, idx)
-                         if (tmplStr != "null" && !tmplStr.matches(TEMPLATE_NAME_REGEX)) return@all false
+                         if (tmplStr != "null" && !isValidTemplate(tmplStr)) return@all false
 
                          while (idx < len && trimmed[idx].isWhitespace()) idx++
                          if (idx < len) {
                              start = idx
                              while (idx < len && !trimmed[idx].isWhitespace()) idx++
                              val kbStr = trimmed.substring(start, idx)
-                             if (kbStr != "null" && !kbStr.matches(KEYBOX_FILENAME_REGEX)) return@all false
+                             if (kbStr != "null" && !isValidKeybox(kbStr)) return@all false
 
                              while (idx < len && trimmed[idx].isWhitespace()) idx++
                              if (idx < len) {
                                  start = idx
                                  while (idx < len && !trimmed[idx].isWhitespace()) idx++
                                  val permStr = trimmed.substring(start, idx)
-                                 if (permStr != "null" && !permStr.matches(PERMISSIONS_REGEX)) return@all false
+                                 if (permStr != "null" && !isValidPermissions(permStr)) return@all false
                              }
                          }
                      }
