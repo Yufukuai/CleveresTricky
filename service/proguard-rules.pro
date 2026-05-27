@@ -26,6 +26,9 @@
 -keep class org.bouncycastle.jce.provider.** { *; }
 -dontwarn javax.naming.**
 
+# Prevent compilation failure on older SDKs
+-dontwarn java.net.http.**
+
 # Aggressive Obfuscation
 -repackageclasses 'x'
 -allowaccessmodification
