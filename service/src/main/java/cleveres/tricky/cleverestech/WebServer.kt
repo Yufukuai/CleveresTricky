@@ -1925,7 +1925,14 @@ class WebServer(
         }
         async function runWithState(btn, text, task) {
              const orig = btn.innerText; btn.disabled = true; btn.innerText = text;
-             try { await task(); } finally { btn.disabled = false; btn.innerText = orig; }
+             notify(text, 'working');
+             try { await task(); } finally {
+                 btn.disabled = false; btn.innerText = orig;
+                 const island = document.getElementById('island');
+                 if (island.classList.contains('working')) {
+                     island.classList.remove('active');
+                 }
+             }
         }
         function switchTab(id) {
             const editor = document.getElementById('fileEditor');
