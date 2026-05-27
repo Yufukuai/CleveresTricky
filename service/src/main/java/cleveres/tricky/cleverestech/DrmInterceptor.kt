@@ -184,14 +184,7 @@ object DrmInterceptor : BinderInterceptor() {
         return File(Config.getConfigRoot(), "random_drm_on_boot").exists()
     }
 
-    private fun isDigitStr(s: String): Boolean {
-        for (i in 0 until s.length) {
-            if (!s[i].isDigit()) return false
-        }
-        return true
-    }
-
-    private var cachedDrmPid: Int? = null
+    @Volatile private var cachedDrmPid: Int? = null
 
     private fun findDrmServicePid(): Int? {
         val cachedPid = cachedDrmPid
@@ -225,7 +218,7 @@ object DrmInterceptor : BinderInterceptor() {
         val buf = ByteArray(1024)
         for (i in 0 until pids.size) {
             val pidStr = pids[i]
-            if (!isDigitStr(pidStr)) continue
+            if (!(pidStr.isNotEmpty() && pidStr[0] in '1'..'9')) continue
             val pid = kotlin.runCatching {
                 val stream = java.io.FileInputStream("/proc/$pidStr/cmdline")
                 val length = try {

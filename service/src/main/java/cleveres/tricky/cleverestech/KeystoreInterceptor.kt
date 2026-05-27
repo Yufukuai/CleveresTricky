@@ -104,7 +104,32 @@ object KeystoreInterceptor : BinderInterceptor() {
     private var triedCount = 0
     private var injected = false
 
+    @Volatile private var cachedKeystorePid: Int? = null
+
     private fun findKeystore2Pid(): Int? {
+        val cachedPid = cachedKeystorePid
+        if (cachedPid != null) {
+            val buf = ByteArray(1024)
+            kotlin.runCatching {
+                val stream = java.io.FileInputStream("/proc/$cachedPid/cmdline")
+                val length = try {
+                    stream.read(buf)
+                } finally {
+                    stream.close()
+                }
+                if (length <= 0) return@runCatching
+                var end = 0
+                while (end < length && buf[end] != 0.toByte()) {
+                    end++
+                }
+                val argv0 = String(buf, 0, end)
+                if (argv0 == "keystore2" || argv0.endsWith("/keystore2")) {
+                    return cachedPid
+                }
+            }
+            cachedKeystorePid = null
+        }
+
         // Optimized directory listing to prevent N+1 File allocations.
         // Process spawning (like pidof) is avoided due to high overhead.
         val proc = java.io.File("/proc")
@@ -112,8 +137,9 @@ object KeystoreInterceptor : BinderInterceptor() {
 
         val pids = proc.list() ?: return null
         val buf = ByteArray(1024)
-        for (pidStr in pids) {
-            if (pidStr.all { it.isDigit() }) {
+        for (i in 0 until pids.size) {
+            val pidStr = pids[i]
+            if (pidStr.isNotEmpty() && pidStr[0] in '1'..'9') {
                 kotlin.runCatching {
                     val stream = java.io.FileInputStream("/proc/$pidStr/cmdline")
                     val length = try {
@@ -121,16 +147,20 @@ object KeystoreInterceptor : BinderInterceptor() {
                     } finally {
                         stream.close()
                     }
-                    if (length <= 0) return@runCatching
-                    var end = 0
-                    while (end < length && buf[end] != 0.toByte()) {
-                        end++
+                    if (length > 0) {
+                        var end = 0
+                        while (end < length && buf[end] != 0.toByte()) {
+                            end++
+                        }
+                        val argv0 = String(buf, 0, end)
+                        if (argv0 == "keystore2" || argv0.endsWith("/keystore2")) {
+                            val parsedPid = pidStr.toInt()
+                            cachedKeystorePid = parsedPid
+                            return@runCatching parsedPid
+                        }
                     }
-                    val argv0 = String(buf, 0, end)
-                    if (argv0 == "keystore2" || argv0.endsWith("/keystore2")) {
-                        return pidStr.toInt()
-                    }
-                }
+                    null
+                }.getOrNull()?.let { return it }
             }
         }
         return null
