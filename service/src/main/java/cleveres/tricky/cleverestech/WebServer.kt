@@ -2922,7 +2922,6 @@ class WebServer(
                     translations = await res.json();
                     console.log('[CleveresTricky] loadLanguage: loaded', Object.keys(translations).length, 'keys');
                     applyTranslations();
-                    notify('Language Loaded');
                 } else {
                     console.log('[CleveresTricky] loadLanguage: no language file (status=' + res.status + ')');
                 }
