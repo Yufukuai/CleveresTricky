@@ -1378,15 +1378,15 @@ class WebServer(
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <div style="flex: 1; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
                 <div style="font-size: 0.8em; color: #888; text-transform: uppercase;">Global Mode</div>
-                <div id="status_global" style="font-weight: bold; color: var(--danger); margin-top: 5px;">Inactive</div>
+                <div id="status_global" style="font-weight: bold; color: var(--danger); margin-top: 5px; background: rgba(239, 68, 68, 0.1); padding: 5px; border-radius: 4px;">INACTIVE</div>
             </div>
             <div style="flex: 1; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
                 <div style="font-size: 0.8em; color: #888; text-transform: uppercase;">RKP Bypass</div>
-                <div id="status_rkp" style="font-weight: bold; color: var(--danger); margin-top: 5px;">Inactive</div>
+                <div id="status_rkp" style="font-weight: bold; color: var(--danger); margin-top: 5px; background: rgba(239, 68, 68, 0.1); padding: 5px; border-radius: 4px;">INACTIVE</div>
             </div>
             <div style="flex: 1; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
                 <div style="font-size: 0.8em; color: #888; text-transform: uppercase;">DRM Fix</div>
-                <div id="status_drm" style="font-weight: bold; color: var(--danger); margin-top: 5px;">Inactive</div>
+                <div id="status_drm" style="font-weight: bold; color: var(--danger); margin-top: 5px; background: rgba(239, 68, 68, 0.1); padding: 5px; border-radius: 4px;">INACTIVE</div>
             </div>
         </div>
 
@@ -2210,18 +2210,18 @@ class WebServer(
 
                 const rkpStatus = document.getElementById('status_rkp');
                 if (rkpStatus) {
-                    if (data.rkp_bypass) { rkpStatus.innerText = 'Active'; rkpStatus.style.color = 'var(--success)'; }
-                    else { rkpStatus.innerText = 'Inactive'; rkpStatus.style.color = 'var(--danger)'; }
+                    if (data.rkp_bypass) { rkpStatus.innerHTML = 'ACTIVE'; rkpStatus.style.color = 'var(--success)'; rkpStatus.style.background = 'rgba(74, 222, 128, 0.1)'; }
+                    else { rkpStatus.innerHTML = 'INACTIVE'; rkpStatus.style.color = 'var(--danger)'; rkpStatus.style.background = 'rgba(239, 68, 68, 0.1)'; }
                 }
                 const drmStatus = document.getElementById('status_drm');
                 if (drmStatus) {
-                    if (data.drm_fix) { drmStatus.innerText = 'Active'; drmStatus.style.color = 'var(--success)'; }
-                    else { drmStatus.innerText = 'Inactive'; drmStatus.style.color = 'var(--danger)'; }
+                    if (data.drm_fix) { drmStatus.innerHTML = 'ACTIVE'; drmStatus.style.color = 'var(--success)'; drmStatus.style.background = 'rgba(74, 222, 128, 0.1)'; }
+                    else { drmStatus.innerHTML = 'INACTIVE'; drmStatus.style.color = 'var(--danger)'; drmStatus.style.background = 'rgba(239, 68, 68, 0.1)'; }
                 }
                 const globalStatus = document.getElementById('status_global');
                 if (globalStatus) {
-                    if (data.global_mode) { globalStatus.innerText = 'Active'; globalStatus.style.color = 'var(--success)'; }
-                    else { globalStatus.innerText = 'Inactive'; globalStatus.style.color = 'var(--danger)'; }
+                    if (data.global_mode) { globalStatus.innerHTML = 'ACTIVE'; globalStatus.style.color = 'var(--success)'; globalStatus.style.background = 'rgba(74, 222, 128, 0.1)'; }
+                    else { globalStatus.innerHTML = 'INACTIVE'; globalStatus.style.color = 'var(--danger)'; globalStatus.style.background = 'rgba(239, 68, 68, 0.1)'; }
                 }
             } catch(e) { console.error(e); notify('Error: ' + e.message, 'error'); }
 
@@ -2272,7 +2272,7 @@ class WebServer(
             } catch(e) { console.log('[CleveresTricky] Location settings load failed (expected if no file)'); }
         }
 
-        async function toggle(setting) { const el = document.getElementById(setting); try { const res = await fetchAuth('/api/toggle', {method:'POST', body: new URLSearchParams({setting, value: el.checked})}); if (res.ok) { notify('Setting Updated'); if (setting === 'rkp_bypass') { const s = document.getElementById('status_rkp'); if(s) { if(el.checked) { s.innerText='Active'; s.style.color='var(--success)'; } else { s.innerText='Inactive'; s.style.color='var(--danger)'; } } } else if (setting === 'drm_fix') { const s = document.getElementById('status_drm'); if(s) { if(el.checked) { s.innerText='Active'; s.style.color='var(--success)'; } else { s.innerText='Inactive'; s.style.color='var(--danger)'; } } } else if (setting === 'global_mode') { const s = document.getElementById('status_global'); if(s) { if(el.checked) { s.innerText='Active'; s.style.color='var(--success)'; } else { s.innerText='Inactive'; s.style.color='var(--danger)'; } } } } else { throw new Error('Server returned ' + res.status); } } catch(e){ el.checked=!el.checked; notify('Error: ' + e.message, 'error'); } }
+        async function toggle(setting) { const el = document.getElementById(setting); try { const res = await fetchAuth('/api/toggle', {method:'POST', body: new URLSearchParams({setting, value: el.checked})}); if (res.ok) { notify('Setting Updated'); if (setting === 'rkp_bypass') { const s = document.getElementById('status_rkp'); if(s) { if(el.checked) { s.innerHTML='ACTIVE'; s.style.color='var(--success)'; s.style.background='rgba(74, 222, 128, 0.1)'; } else { s.innerHTML='INACTIVE'; s.style.color='var(--danger)'; s.style.background='rgba(239, 68, 68, 0.1)'; } } } else if (setting === 'drm_fix') { const s = document.getElementById('status_drm'); if(s) { if(el.checked) { s.innerHTML='ACTIVE'; s.style.color='var(--success)'; s.style.background='rgba(74, 222, 128, 0.1)'; } else { s.innerHTML='INACTIVE'; s.style.color='var(--danger)'; s.style.background='rgba(239, 68, 68, 0.1)'; } } } else if (setting === 'global_mode') { const s = document.getElementById('status_global'); if(s) { if(el.checked) { s.innerHTML='ACTIVE'; s.style.color='var(--success)'; s.style.background='rgba(74, 222, 128, 0.1)'; } else { s.innerHTML='INACTIVE'; s.style.color='var(--danger)'; s.style.background='rgba(239, 68, 68, 0.1)'; } } } } else { throw new Error('Server returned ' + res.status); } } catch(e){ el.checked=!el.checked; notify('Error: ' + e.message, 'error'); } }
 
         function editDrmConfig() {
             document.getElementById('fileSelector').value = 'drm_fix';
