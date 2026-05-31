@@ -53,49 +53,45 @@ class KeyboxFetcher(private val networkClient: NetworkClient = DefaultNetworkCli
                     val stringSubscriber = HttpResponse.BodySubscribers.ofString(java.nio.charset.StandardCharsets.UTF_8)
                     var totalBytes = 0L
 
-                    HttpResponse.BodySubscribers.fromSubscriber(
-                        object : java.util.concurrent.Flow.Subscriber<MutableList<java.nio.ByteBuffer>> {
-                            private var subscription: java.util.concurrent.Flow.Subscription? = null
-                            private var overLimit = false
+                    object : HttpResponse.BodySubscriber<String?> {
+                        private var subscription: java.util.concurrent.Flow.Subscription? = null
+                        private var overLimit = false
 
-                            override fun onSubscribe(s: java.util.concurrent.Flow.Subscription) {
-                                subscription = s
-                                stringSubscriber.onSubscribe(s)
-                            }
+                        override fun onSubscribe(s: java.util.concurrent.Flow.Subscription) {
+                            subscription = s
+                            stringSubscriber.onSubscribe(s)
+                        }
 
-                            override fun onNext(item: MutableList<java.nio.ByteBuffer>) {
-                                if (overLimit) return
-                                for (buffer in item) {
-                                    totalBytes += buffer.remaining()
-                                }
-                                if (totalBytes > MAX_FILE_SIZE) {
-                                    Logger.e("Fetcher: File body exceeds size limit during download")
-                                    overLimit = true
-                                    subscription?.cancel()
-                                    stringSubscriber.onError(java.io.IOException("Size limit exceeded"))
-                                    return
-                                }
-                                stringSubscriber.onNext(item)
+                        override fun onNext(item: MutableList<java.nio.ByteBuffer>) {
+                            if (overLimit) return
+                            for (buffer in item) {
+                                totalBytes += buffer.remaining()
                             }
+                            if (totalBytes > MAX_FILE_SIZE) {
+                                Logger.e("Fetcher: File body exceeds size limit during download")
+                                overLimit = true
+                                subscription?.cancel()
+                                stringSubscriber.onError(java.io.IOException("Size limit exceeded"))
+                                return
+                            }
+                            stringSubscriber.onNext(item)
+                        }
 
-                            override fun onError(throwable: Throwable) {
-                                stringSubscriber.onError(throwable)
-                            }
+                        override fun onError(throwable: Throwable) {
+                            stringSubscriber.onError(throwable)
+                        }
 
-                            override fun onComplete() {
-                                if (!overLimit) {
-                                    stringSubscriber.onComplete()
-                                }
-                            }
-                        },
-                        {
-                            try {
-                                stringSubscriber.body.toCompletableFuture().join()
-                            } catch (e: Exception) {
-                                null
+                        override fun onComplete() {
+                            if (!overLimit) {
+                                stringSubscriber.onComplete()
                             }
                         }
-                    )
+
+                        override fun getBody(): java.util.concurrent.CompletionStage<String?> {
+                            @Suppress("UNCHECKED_CAST")
+                            return stringSubscriber.body as java.util.concurrent.CompletionStage<String?>
+                        }
+                    }
                 }
 
                 val response = httpClient.sendAsync(request, bodyHandler).await()
