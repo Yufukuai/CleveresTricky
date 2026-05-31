@@ -107,21 +107,14 @@ object Config {
             return if (cached === NULL_CONFIG) null else cached as AppSpoofConfig
         }
 
-        if (state.configs.isEmpty()) {
-            state.cache[uid] = NULL_CONFIG
-            return null
-        }
-
         val pkgs = getPackages(uid)
         var result: AppSpoofConfig? = null
-        if (!state.configs.isEmpty()) {
-            val len = pkgs.size
-            for (i in 0 until len) {
-                val config = state.configs.get(pkgs[i])
-                if (config != null) {
-                    result = config
-                    break
-                }
+        val len = pkgs.size
+        for (i in 0 until len) {
+            val config = state.configs.get(pkgs[i])
+            if (config != null) {
+                result = config
+                break
             }
         }
         state.cache[uid] = result ?: NULL_CONFIG
@@ -620,7 +613,7 @@ object Config {
     }
 
     private class SecurityPatchState(
-        val patches: PackageTrie<Any>,
+        val patches: Map<String, Any>,
         val defaultPatch: Any?
     ) {
         val cache = ConcurrentHashMap<Int, Any>()
@@ -629,7 +622,7 @@ object Config {
     private val NULL_PATCH = Any()
 
     @Volatile
-    private var securityPatchState = SecurityPatchState(PackageTrie(), null)
+    private var securityPatchState = SecurityPatchState(emptyMap(), null)
 
     // Cache for dynamic patch levels (e.g. "today", "YYYY-MM-DD")
     // Key: Template String, Value: Pair(Timestamp, CalculatedLevel)
@@ -645,12 +638,13 @@ object Config {
             if (cached === NULL_PATCH) null else cached
         } else {
             val patches = state.patches
-            val found = if (!patches.isEmpty()) {
+            val found = if (patches.isNotEmpty()) {
+                // Use cached getPackages to avoid expensive IPC call
                 val pkgs = getPackages(callingUid)
                 var f: Any? = null
                 val len = pkgs.size
                 for (i in 0 until len) {
-                    f = patches.get(pkgs[i])
+                    f = patches[pkgs[i]]
                     if (f != null) break
                 }
                 f ?: state.defaultPatch
@@ -691,7 +685,7 @@ object Config {
     }
 
     private fun updateSecurityPatch(f: File?) = runCatching {
-        val newPatch = PackageTrie<Any>()
+        val newPatch = mutableMapOf<String, Any>()
         var newDefault: Any? = null
         f?.useLines { lines ->
             lines.forEach { line ->
@@ -708,7 +702,7 @@ object Config {
                         } else {
                             runCatching { value.convertPatchLevel(false) }.getOrNull() ?: value
                         }
-                        newPatch.add(key, preCalc ?: value)
+                        newPatch[key] = preCalc ?: value
                     } else {
                          // Assume it's the default if it looks like a date or keyword
                          val value = line.trim()
@@ -1256,7 +1250,7 @@ object Config {
         packageCache.clear()
         uidLocks.clear()
         dynamicPatchCache.clear()
-        securityPatchState = SecurityPatchState(PackageTrie(), null)
+        securityPatchState = SecurityPatchState(emptyMap(), null)
         iPm = null
         appConfigState = AppConfigState(PackageTrie())
         targetState = TargetState(PackageTrie(), PackageTrie())
