@@ -107,6 +107,11 @@ object Config {
             return if (cached === NULL_CONFIG) null else cached as AppSpoofConfig
         }
 
+        if (state.configs.isEmpty()) {
+            state.cache[uid] = NULL_CONFIG
+            return null
+        }
+
         val pkgs = getPackages(uid)
         var result: AppSpoofConfig? = null
         val len = pkgs.size
