@@ -151,7 +151,7 @@ class WebUiSafetyTest {
     fun testLocalhostOnlyBinding() {
         assertTrue(
             "WebServer must bind to localhost only (127.0.0.1) for security",
-            webServerContent.contains("127.0.0.1") || webServerContent.contains("localhost")
+            webServerContent.contains("WEB_UI_LOOPBACK_HOST")
         )
     }
 

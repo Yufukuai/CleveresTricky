@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
 PORT_FILE="/data/adb/cleverestricky/web_port"
-HOST="127.0.0.1"
+HOST="localhost"
 # Wait up to 10 seconds so slower boots have time to finish binding the
 # loopback WebUI socket before the browser intent is fired.
 MAX_WAIT_SECONDS=10
