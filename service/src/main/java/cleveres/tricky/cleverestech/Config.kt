@@ -114,12 +114,14 @@ object Config {
 
         val pkgs = getPackages(uid)
         var result: AppSpoofConfig? = null
-        val len = pkgs.size
-        for (i in 0 until len) {
-            val config = state.configs.get(pkgs[i])
-            if (config != null) {
-                result = config
-                break
+        if (!state.configs.isEmpty()) {
+            val len = pkgs.size
+            for (i in 0 until len) {
+                val config = state.configs.get(pkgs[i])
+                if (config != null) {
+                    result = config
+                    break
+                }
             }
         }
         state.cache[uid] = result ?: NULL_CONFIG
