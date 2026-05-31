@@ -199,11 +199,15 @@ object DrmInterceptor : BinderInterceptor() {
                 }
                 if (length <= 0) return@runCatching
                 var end = 0
+                var lastSlash = -1
                 while (end < length && buf[end] != 0.toByte()) {
+                    if (buf[end] == 47.toByte()) {
+                        lastSlash = end
+                    }
                     end++
                 }
-                val argv0 = String(buf, 0, end)
-                if (DRM_PROCESS_NAMES.contains(argv0.substringAfterLast('/'))) {
+                val processName = String(buf, lastSlash + 1, end - (lastSlash + 1))
+                if (DRM_PROCESS_NAMES.contains(processName)) {
                     return cachedPid
                 }
             }
@@ -228,13 +232,17 @@ object DrmInterceptor : BinderInterceptor() {
                 }
                 if (length > 0) {
                     var end = 0
+                    var lastSlash = -1
                     while (end < length && buf[end] != 0.toByte()) {
+                        if (buf[end] == 47.toByte()) {
+                            lastSlash = end
+                        }
                         end++
                     }
-                    val argv0 = String(buf, 0, end)
-                    if (DRM_PROCESS_NAMES.contains(argv0.substringAfterLast('/'))) {
+                    val processName = String(buf, lastSlash + 1, end - (lastSlash + 1))
+                    if (DRM_PROCESS_NAMES.contains(processName)) {
                         val parsedPid = pidStr.toInt()
-                        Logger.d("DRM: Found DRM process '$argv0' at PID $parsedPid")
+                        Logger.d("DRM: Found DRM process '${String(buf, 0, end)}' at PID $parsedPid")
                         return@runCatching parsedPid
                     }
                 }
