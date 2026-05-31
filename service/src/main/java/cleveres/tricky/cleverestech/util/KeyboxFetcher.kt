@@ -90,7 +90,9 @@ class KeyboxFetcher(private val networkClient: NetworkClient = DefaultNetworkCli
                         },
                         {
                             try {
-                                stringSubscriber.body.toCompletableFuture().join()
+                                // Replaced join() with get() without blocking wait since fromSubscriber delays this finisher
+                                // until the upstream publisher signals completion. No thread starvation.
+                                stringSubscriber.body.toCompletableFuture().getNow(null)
                             } catch (e: Exception) {
                                 null
                             }
