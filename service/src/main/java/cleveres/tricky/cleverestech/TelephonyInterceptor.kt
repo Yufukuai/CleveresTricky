@@ -155,23 +155,25 @@ object TelephonyInterceptor : BinderInterceptor() {
         val cachedPid = cachedPhonePid
         if (cachedPid != null) {
             val buf = ByteArray(1024)
-            kotlin.runCatching {
+            try {
                 val stream = java.io.FileInputStream("/proc/$cachedPid/cmdline")
                 val length = try {
                     stream.read(buf)
                 } finally {
                     stream.close()
                 }
-                if (length <= 0) return@runCatching
-                var end = 0
-                while (end < length && buf[end] != 0.toByte()) {
-                    end++
+                if (length > 0) {
+                    var end = 0
+                    while (end < length && buf[end] != 0.toByte()) {
+                        end++
+                    }
+                    val argv0 = String(buf, 0, end)
+                    if (argv0 == "com.android.phone") {
+                        return cachedPid
+                    }
                 }
-                val argv0 = String(buf, 0, end)
-                if (argv0 == "com.android.phone") {
-                    return cachedPid
-                }
-            }
+            } catch (_: java.io.FileNotFoundException) {
+            } catch (_: Exception) {}
             cachedPhonePid = null
         }
 
@@ -183,7 +185,7 @@ object TelephonyInterceptor : BinderInterceptor() {
         for (i in 0 until pids.size) {
             val pidStr = pids[i]
             if (pidStr.isNotEmpty() && pidStr[0] in '1'..'9') {
-                kotlin.runCatching {
+                try {
                     val stream = java.io.FileInputStream("/proc/$pidStr/cmdline")
                     val length = try {
                         stream.read(buf)
@@ -199,11 +201,11 @@ object TelephonyInterceptor : BinderInterceptor() {
                         if (argv0 == "com.android.phone") {
                             val pid = pidStr.toInt()
                             cachedPhonePid = pid
-                            return@runCatching pid
+                            return pid
                         }
                     }
-                    null
-                }.getOrNull()?.let { return it }
+                } catch (_: java.io.FileNotFoundException) {
+                } catch (_: Exception) {}
             }
         }
         return null
