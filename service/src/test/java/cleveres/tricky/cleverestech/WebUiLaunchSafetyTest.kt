@@ -36,8 +36,8 @@ class WebUiLaunchSafetyTest {
     @Test
     fun testActionScriptUsesLoopbackIp() {
         assertTrue(
-            "WebUI action script must use localhost to support IPv6 resolution",
-            actionScriptContent.contains("localhost")
+            "WebUI action script must use 127.0.0.1 to avoid localhost resolution issues",
+            actionScriptContent.contains("127.0.0.1")
         )
     }
 
@@ -81,7 +81,8 @@ class WebUiLaunchSafetyTest {
         assertTrue(
             "Network security config must allow cleartext loopback traffic for the local WebUI",
             networkSecurityConfigContent.contains("cleartextTrafficPermitted=\"true\"") &&
-                networkSecurityConfigContent.contains("<domain includeSubdomains=\"true\">localhost</domain>")
+                networkSecurityConfigContent.contains("<domain includeSubdomains=\"true\">localhost</domain>") &&
+                networkSecurityConfigContent.contains("<domain includeSubdomains=\"false\">127.0.0.1</domain>")
         )
     }
 
@@ -91,15 +92,15 @@ class WebUiLaunchSafetyTest {
             "WebServer startup must actively wait for the loopback socket to accept connections before advertising the URL",
             webServerContent.contains("waitUntilListening") &&
                 webServerContent.contains("Socket().use") &&
-                webServerContent.contains("WEB_UI_LOOPBACK_HOST")
+                webServerContent.contains("127.0.0.1")
         )
     }
 
     @Test
     fun testWebUiConfigUsesLoopbackHost() {
         assertTrue(
-            "WebUI config must use localhost instead of wildcard addresses",
-            webUiConfigContent.contains("""WEB_UI_LOOPBACK_HOST = "localhost"""")
+            "WebUI config must use 127.0.0.1 instead of wildcard addresses",
+            webUiConfigContent.contains("""WEB_UI_LOOPBACK_HOST = "127.0.0.1"""")
         )
     }
 

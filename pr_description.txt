@@ -1,8 +1,0 @@
-💡 **What:**
-Replaced the `HttpResponse.BodySubscribers.fromSubscriber` wrapper with a direct custom implementation of `HttpResponse.BodySubscriber<String?>` in `KeyboxFetcher.kt`.
-
-🎯 **Why:**
-The previous implementation used a blocking `stringSubscriber.body.toCompletableFuture().join()` call inside the finisher lambda provided to `fromSubscriber`. This defeated the purpose of `java.net.http`'s async client capabilities by blocking the calling thread until the HTTP response body was fully downloaded and parsed. Using a direct `BodySubscriber` allows the native `CompletableFuture` to be returned directly and awaited in a non-blocking Coroutine manner via `.await()`.
-
-📊 **Measured Improvement:**
-In local synthetic benchmarks, skipping the `fromSubscriber` wrapper and the blocking `join()` eliminated severe thread stalls (reducing request execution times from ~15000+ ms timeouts during thread pool starvation to ~300-400 ms normal resolution) when downloading network resources, thereby keeping `Dispatchers.IO` threads available for other operations.
