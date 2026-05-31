@@ -27,11 +27,12 @@ class ConfigPatchLevelTest {
         val securityPatchStateField = Config::class.java.getDeclaredField("securityPatchState")
         securityPatchStateField.isAccessible = true
 
-        val testPatchMap = mapOf("com.example.patched" to "2023-12-05")
+        val testPatchMap = cleveres.tricky.cleverestech.util.PackageTrie<Any>()
+        testPatchMap.add("com.example.patched", "2023-12-05")
 
         val stateClass = Config::class.java.declaredClasses.find { it.simpleName == "SecurityPatchState" }
             ?: throw ClassNotFoundException("SecurityPatchState not found")
-        val constructor = stateClass.getDeclaredConstructor(Map::class.java, Any::class.java)
+        val constructor = stateClass.getDeclaredConstructor(cleveres.tricky.cleverestech.util.PackageTrie::class.java, Any::class.java)
         constructor.isAccessible = true
         val state = constructor.newInstance(testPatchMap, null)
 

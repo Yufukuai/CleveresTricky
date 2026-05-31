@@ -620,7 +620,7 @@ object Config {
     }
 
     private class SecurityPatchState(
-        val patches: Map<String, Any>,
+        val patches: PackageTrie<Any>,
         val defaultPatch: Any?
     ) {
         val cache = ConcurrentHashMap<Int, Any>()
@@ -629,7 +629,7 @@ object Config {
     private val NULL_PATCH = Any()
 
     @Volatile
-    private var securityPatchState = SecurityPatchState(emptyMap(), null)
+    private var securityPatchState = SecurityPatchState(PackageTrie(), null)
 
     // Cache for dynamic patch levels (e.g. "today", "YYYY-MM-DD")
     // Key: Template String, Value: Pair(Timestamp, CalculatedLevel)
@@ -645,13 +645,12 @@ object Config {
             if (cached === NULL_PATCH) null else cached
         } else {
             val patches = state.patches
-            val found = if (patches.isNotEmpty()) {
-                // Use cached getPackages to avoid expensive IPC call
+            val found = if (!patches.isEmpty()) {
                 val pkgs = getPackages(callingUid)
                 var f: Any? = null
                 val len = pkgs.size
                 for (i in 0 until len) {
-                    f = patches[pkgs[i]]
+                    f = patches.get(pkgs[i])
                     if (f != null) break
                 }
                 f ?: state.defaultPatch
@@ -692,7 +691,7 @@ object Config {
     }
 
     private fun updateSecurityPatch(f: File?) = runCatching {
-        val newPatch = mutableMapOf<String, Any>()
+        val newPatch = PackageTrie<Any>()
         var newDefault: Any? = null
         f?.useLines { lines ->
             lines.forEach { line ->
@@ -709,7 +708,7 @@ object Config {
                         } else {
                             runCatching { value.convertPatchLevel(false) }.getOrNull() ?: value
                         }
-                        newPatch[key] = preCalc ?: value
+                        newPatch.add(key, preCalc ?: value)
                     } else {
                          // Assume it's the default if it looks like a date or keyword
                          val value = line.trim()
@@ -1257,7 +1256,7 @@ object Config {
         packageCache.clear()
         uidLocks.clear()
         dynamicPatchCache.clear()
-        securityPatchState = SecurityPatchState(emptyMap(), null)
+        securityPatchState = SecurityPatchState(PackageTrie(), null)
         iPm = null
         appConfigState = AppConfigState(PackageTrie())
         targetState = TargetState(PackageTrie(), PackageTrie())

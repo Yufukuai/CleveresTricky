@@ -13,12 +13,13 @@ class ConfigPatchLevelSharedUidTest {
         val securityPatchStateField = Config::class.java.getDeclaredField("securityPatchState")
         securityPatchStateField.isAccessible = true
 
-        val testPatchMap = mapOf("com.example.pkgB" to "2023-01-01")
+        val testPatchMap = cleveres.tricky.cleverestech.util.PackageTrie<Any>()
+        testPatchMap.add("com.example.pkgB", "2023-01-01")
         val defaultPatch = "2024-01-01"
 
         val stateClass = Config::class.java.declaredClasses.find { it.simpleName == "SecurityPatchState" }
             ?: throw ClassNotFoundException("SecurityPatchState not found")
-        val stateConstructor = stateClass.getDeclaredConstructor(Map::class.java, Any::class.java)
+        val stateConstructor = stateClass.getDeclaredConstructor(cleveres.tricky.cleverestech.util.PackageTrie::class.java, Any::class.java)
         stateConstructor.isAccessible = true
         val state = stateConstructor.newInstance(testPatchMap, defaultPatch)
 
