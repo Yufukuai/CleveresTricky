@@ -809,11 +809,15 @@ class WebServer(
                          val permsArr = obj.optJSONArray("permissions")
                          var permsStr = "null"
                          if (permsArr != null && permsArr.length() > 0) {
-                             val list = ArrayList<String>()
-                             for (j in 0 until permsArr.length()) {
-                                 list.add(permsArr.getString(j))
+                             val len = permsArr.length()
+                            val permSb = StringBuilder()
+                             for (j in 0 until len) {
+                                 permSb.append(permsArr.getString(j))
+                                if (j < len - 1) {
+                                    permSb.append(",")
+                                }
                              }
-                             permsStr = list.joinToString(",")
+                             permsStr = permSb.toString()
                          }
                          if (!isValidPkg(pkg)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input: invalid characters")
                          if (tmpl != "null" && !isValidTemplate(tmpl)) return secureResponse(Response.Status.BAD_REQUEST, "text/plain", "Invalid input")
