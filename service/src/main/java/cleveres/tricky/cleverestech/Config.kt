@@ -107,6 +107,11 @@ object Config {
             return if (cached === NULL_CONFIG) null else cached as AppSpoofConfig
         }
 
+        if (state.configs.isEmpty()) {
+            state.cache[uid] = NULL_CONFIG
+            return null
+        }
+
         val pkgs = getPackages(uid)
         var result: AppSpoofConfig? = null
         val len = pkgs.size
@@ -1190,12 +1195,19 @@ object Config {
     }
 
     private fun checkPackages(packages: PackageTrie<Boolean>, callingUid: Int): Boolean {
-        return kotlin.runCatching {
-            if (packages.isEmpty()) return@runCatching false
+        try {
+            if (packages.isEmpty()) return false
             val ps = getPackages(callingUid)
-            if (ps.isEmpty()) return@runCatching false
-            ps.any { pkgName -> matchesPackage(pkgName, packages) }
-        }.onFailure { Logger.e("failed to get packages", it) }.getOrNull() ?: false
+            if (ps.isEmpty()) return false
+            val len = ps.size
+            for (i in 0 until len) {
+                if (matchesPackage(ps[i], packages)) return true
+            }
+            return false
+        } catch (e: Exception) {
+            Logger.e("failed to get packages", e)
+            return false
+        }
     }
 
     fun needHack(callingUid: Int): Boolean {
