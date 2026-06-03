@@ -9,9 +9,21 @@ import java.util.concurrent.ThreadLocalRandom
 
 var systemPropertiesGet: (String, String?) -> String? = { key, def -> SystemProperties.get(key, def) }
 
-fun getTransactCode(clazz: Class<*>, method: String) =
-    clazz.getDeclaredField("TRANSACTION_$method").apply { isAccessible = true }
-        .getInt(null) // 2
+fun getTransactCode(clazz: Class<*>, method: String): Int {
+    try {
+        return clazz.getDeclaredField("TRANSACTION_$method").apply { isAccessible = true }.getInt(null)
+    } catch (e: Exception) {
+        try {
+            val getDefaultTransactionName = clazz.getDeclaredMethod("getDefaultTransactionName", Int::class.javaPrimitiveType)
+            for (i in 1..255) {
+                val name = getDefaultTransactionName.invoke(null, i) as? String
+                if (name == method) return i
+            }
+        } catch (ignored: Exception) {}
+        Logger.e("Failed to find transaction code for $method in ${clazz.name}", e)
+        return -1
+    }
+}
 
 @OptIn(ExperimentalStdlibApi::class)
 val bootHash by lazy {

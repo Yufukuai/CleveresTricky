@@ -197,26 +197,18 @@ object KeystoreInterceptor : BinderInterceptor() {
                     return false
                 }
                 Logger.i("found keystore2 at pid=$pid, injecting libcleverestricky.so ...")
-                val p = Runtime.getRuntime().exec(
-                    arrayOf(
-                        "/data/adb/modules/cleverestricky/inject",
-                        pid.toString(),
-                        "libcleverestricky.so",
-                        "entry"
-                    )
-                )
-                var stderr = ""
-                val stdout = try {
+                val p = ProcessBuilder(
+                    "/data/adb/modules/cleverestricky/inject",
+                    pid.toString(),
+                    "libcleverestricky.so",
+                    "entry"
+                ).redirectErrorStream(true).start()
+                val output = try {
                     p.inputStream.bufferedReader().use { it.readText().trim() }
-                } finally {
-                    try { stderr = p.errorStream.bufferedReader().use { it.readText().trim() } } catch (_: Exception) {}
-                }
+                } catch (_: Exception) { "" }
                 val exitCode = p.waitFor()
-                if (stdout.isNotBlank()) {
-                    Logger.d("keystore injector stdout: $stdout")
-                }
-                if (stderr.isNotBlank()) {
-                    Logger.d("keystore injector stderr: $stderr")
+                if (output.isNotBlank()) {
+                    Logger.d("keystore injector output: $output")
                 }
                 if (exitCode != 0) {
                     Logger.e("failed to inject keystore (exit=$exitCode, pid=$pid); possible conflict with another Zygisk/ptrace module. Will retry without exiting daemon")
