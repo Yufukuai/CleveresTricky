@@ -197,9 +197,12 @@ class WebServer(
     }
 
     private fun isRateLimited(ip: String): Boolean {
-        if (requestCounts.size > 1000) requestCounts.clear()
+        val now = System.currentTimeMillis()
+        if (requestCounts.size > 1000) {
+            requestCounts.entries.removeIf { now - it.value.timestamp > RATE_WINDOW }
+            if (requestCounts.size > 1000) requestCounts.clear() // Fallback
+        }
         val current = requestCounts.compute(ip) { _, v ->
-            val now = System.currentTimeMillis()
             if (v == null || now - v.timestamp > RATE_WINDOW) {
                 RateLimitEntry(now, 1)
             } else {
@@ -1878,7 +1881,16 @@ class WebServer(
             document.addEventListener("click", function (e) { closeAllLists(e.target); });
         }
 
-        const token = urlParams.get('token');
+        let token = urlParams.get('token');
+        if (token) {
+            localStorage.setItem('ct_token', token);
+        } else {
+            token = localStorage.getItem('ct_token');
+        }
+        if (!token) {
+            document.body.innerHTML = '<div style="padding: 20px; text-align: center; color: white; background: #121212; height: 100vh; font-family: sans-serif;"><h2>Missing Token</h2><p>Please open WebUI from the Magisk or KernelSU app action menu.</p></div>';
+            throw new Error('No token');
+        }
         function getAuthUrl(path) { return path; }
         async function fetchAuth(url, options = {}) {
             if (!token) throw new Error('No token');

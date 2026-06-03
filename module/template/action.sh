@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
 PORT_FILE="/data/adb/cleverestricky/web_port"
-HOST="127.0.0.1"
+HOST="localhost"
 # Wait up to 10 seconds so slower boots have time to finish binding the
 # loopback WebUI socket before the browser intent is fired.
 MAX_WAIT_SECONDS=10
@@ -40,7 +40,13 @@ echo "- Waiting for WebUI to listen on $HOST:$PORT"
 READY=0
 ATTEMPT=0
 while [ "$ATTEMPT" -lt "$MAX_WAIT_SECONDS" ]; do
-  if timeout 1 toybox nc -z "$HOST" "$PORT" >/dev/null 2>&1; then
+  if [ -f "/proc/net/tcp" ] && grep -q -i ":$(printf '%04X' $PORT) " /proc/net/tcp; then
+    READY=1
+    break
+  elif [ -f "/proc/net/tcp6" ] && grep -q -i ":$(printf '%04X' $PORT) " /proc/net/tcp6; then
+    READY=1
+    break
+  elif timeout 1 sh -c "</dev/tcp/127.0.0.1/$PORT" >/dev/null 2>&1; then
     READY=1
     break
   fi
