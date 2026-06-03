@@ -46,7 +46,7 @@ while [ "$ATTEMPT" -lt "$MAX_WAIT_SECONDS" ]; do
   elif [ -f "/proc/net/tcp6" ] && grep -q -i ":$(printf '%04X' $PORT) " /proc/net/tcp6; then
     READY=1
     break
-  elif timeout 1 sh -c "</dev/tcp/127.0.0.1/$PORT" >/dev/null 2>&1; then
+  elif timeout 1 sh -c "</dev/tcp/$HOST/$PORT" >/dev/null 2>&1; then
     READY=1
     break
   fi
