@@ -258,13 +258,14 @@ object BootLogic {
      * and wait for process termination.
      */
     private fun execAndDrain(cmd: Array<String>) {
-        val p = Runtime.getRuntime().exec(cmd)
         try {
-                    p.inputStream.readBytes()
-                } catch (_: Exception) {}
-                finally {
-                    try { p.errorStream.readBytes() } catch (_: Exception) {}
-                }
-        p.waitFor()
+            val p = ProcessBuilder(*cmd).redirectErrorStream(true).start()
+            try {
+                p.inputStream.readBytes()
+            } catch (_: Exception) {}
+            p.waitFor()
+        } catch (e: Exception) {
+            Logger.e("Failed to execute and drain", e)
+        }
     }
 }
