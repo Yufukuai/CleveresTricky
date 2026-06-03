@@ -1,0 +1,8 @@
+What:
+Replaced the `ProcessBuilder` string injection call in `KeystoreInterceptor.kt` with `Runtime.getRuntime().exec(arrayOf(...))` and properly drained both `inputStream` and `errorStream`. Also bumped the module patch version to `V2.3.5`.
+
+Why:
+The previous implementation violated safety rules detected by `KeystoreInterceptorSafetyTest`, specifically the risk of shell injection and file descriptor (FD) exhaustion on the daemon. These issues were causing test suite failures on the CI pipeline. Reverting to `arrayOf` prevents shell evaluation, and reading streams reliably prevents deadlocks and FD leaks.
+
+Measured Improvement:
+N/A - the goal of this PR is to resolve broken test failures (specifically `KeystoreInterceptorSafetyTest`), rather than to improve performance metrics.

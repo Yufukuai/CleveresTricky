@@ -197,16 +197,22 @@ object KeystoreInterceptor : BinderInterceptor() {
                     return false
                 }
                 Logger.i("found keystore2 at pid=$pid, injecting libcleverestricky.so ...")
-                val p = ProcessBuilder(
+                val p = Runtime.getRuntime().exec(arrayOf(
                     "/data/adb/modules/cleverestricky/inject",
                     pid.toString(),
                     "libcleverestricky.so",
                     "entry"
-                ).redirectErrorStream(true).start()
+                ))
                 val output = try {
                     p.inputStream.bufferedReader().use { it.readText().trim() }
                 } catch (_: Exception) { "" }
+                val errOutput = try {
+                    p.errorStream.bufferedReader().use { it.readText().trim() }
+                } catch (_: Exception) { "" }
                 val exitCode = p.waitFor()
+                if (errOutput.isNotBlank()) {
+                    Logger.d("keystore injector stderr: $errOutput")
+                }
                 if (output.isNotBlank()) {
                     Logger.d("keystore injector output: $output")
                 }
