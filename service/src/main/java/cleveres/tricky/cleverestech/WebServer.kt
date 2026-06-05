@@ -1889,13 +1889,16 @@ class WebServer(
         let token = urlParams.get('token');
         if (token) {
             localStorage.setItem('ct_token', token);
-            // Clean up URL to prevent token leakage and allow clean reloads
-            window.history.replaceState({}, document.title, window.location.pathname);
         } else {
             token = localStorage.getItem('ct_token');
+            if (token) {
+                // If token was only found in localStorage, append it to URL so page refreshes don't lose it if localStorage clears
+                urlParams.set('token', token);
+                window.history.replaceState({}, document.title, window.location.pathname + '?' + urlParams.toString());
+            }
         }
         if (!token) {
-            document.body.innerHTML = '<div style="padding: 20px; text-align: center; color: white; background: #121212; height: 100vh; font-family: sans-serif;"><h2>Missing Token</h2><p>Please open WebUI from the Magisk or KernelSU app action menu.</p><button onclick="window.location.href = \'/\'" style="padding: 10px 20px; margin-top: 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; min-height: 44px; min-width: 44px;">Retry</button></div>';
+            document.body.innerHTML = '<div style="padding: 20px; text-align: center; color: white; background: #121212; height: 100vh; font-family: sans-serif;"><h2>Missing Token</h2><p>Please open WebUI from the Magisk or KernelSU app action menu.</p><button onclick="window.location.reload()" style="padding: 10px 20px; margin-top: 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; min-height: 44px; min-width: 44px;">Retry</button></div>';
             throw new Error('No token');
         }
         function getAuthUrl(path) { return path; }
