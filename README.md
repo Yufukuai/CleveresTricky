@@ -118,12 +118,11 @@ The module detects your chipset and uses the correct provisioning binary automat
 ## Quick Start
 
 1. **Install** -- Flash the module ZIP from KernelSU/APatch manager and reboot
-2. **Open WebUI** -- Navigate to `http://localhost:5623` in any browser
+2. **Open WebUI** -- Navigate to `http://localhost:5623` in any browser (Configuration changes take effect immediately. No reboot needed)
 3. **Add Keybox** *(optional)* -- Upload via WebUI or place at `/data/adb/cleverestricky/keybox.xml`
 4. **Enable RKP** *(for STRONG integrity)* -- Toggle in WebUI or `touch /data/adb/cleverestricky/rkp_bypass`
 5. **Set Targets** *(optional)* -- Add package names in WebUI or edit `/data/adb/cleverestricky/target.txt`
 
-> Configuration changes take effect immediately. No reboot needed.
 
 ---
 
@@ -169,7 +168,7 @@ The module detects your chipset and uses the correct provisioning binary automat
 </AndroidAttestation>
 ```
 
-### Build Vars (`spoof_build_vars`)
+### Build Properties Spoofing (`spoof_build_vars`)
 
 ```ini
 MANUFACTURER=Google
@@ -226,7 +225,7 @@ SECURITY_PATCH=2025-03-05
 
 </details>
 
-### Target Packages (`target.txt`)
+### Target Packages for Attestation (`target.txt`)
 
 ```bash
 # Standard mode (leaf certificate replacement)
@@ -245,7 +244,7 @@ com.netflix.mediaclient xiaomi14 null
 com.google.android.apps.walletnfcrel null keybox_wallet.xml
 ```
 
-### Security Patch (`security_patch.txt`)
+### Security Patch Spoofing (`security_patch.txt`)
 
 ```ini
 # Simple (applied to all components)
@@ -276,7 +275,7 @@ rm /data/adb/cleverestricky/rkp_bypass
 
 The module runs a **Local RKP Proxy** that generates valid COSE/CBOR structures signed by a rotating root secret. The cryptographic identity mutates every 24 hours to prevent fingerprint-based banning.
 
-### AutoPIF (Fingerprint Updates)
+### AutoPIF - Automatic Fingerprint Updates
 
 ```bash
 # Manual
@@ -298,7 +297,7 @@ touch /data/adb/cleverestricky/drm_fix
 touch /data/adb/cleverestricky/random_on_boot
 ```
 
-### Location Spoofing
+### Location Spoofing via WebUI or File
 
 ```bash
 touch /data/adb/cleverestricky/spoof_location
