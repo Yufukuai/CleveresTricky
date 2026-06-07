@@ -303,9 +303,10 @@ object DrmInterceptor : BinderInterceptor() {
                 Logger.d("DRM: Injecting PID=$pid with $modulePath/libcleverestricky.so")
                 Thread {
                     try {
+                        val abi = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
                         val p = Runtime.getRuntime().exec(
                             arrayOf(
-                                "$modulePath/inject",
+                                "$modulePath/lib/$abi/inject",
                                 pid.toString(),
                                 "$modulePath/libcleverestricky.so",
                                 "entry"

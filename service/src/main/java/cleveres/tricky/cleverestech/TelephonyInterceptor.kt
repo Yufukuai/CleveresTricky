@@ -36,18 +36,9 @@ object TelephonyInterceptor : BinderInterceptor() {
     private val fallbackIccid by lazy { generateFallbackIccid() }
 
     private fun generateFallbackImei(): String {
-        val sb = StringBuilder()
-        sb.append("35")
-        for (i in 0 until 12) sb.append(secureRandom.nextInt(10))
-        val digits = sb.toString()
-        var sum = 0
-        for (i in digits.indices) {
-            var d = digits[i] - '0'
-            if (i % 2 != 0) d *= 2
-            sum += d / 10 + d % 10
-        }
-        val checkDigit = (10 - sum % 10) % 10
-        return digits + checkDigit
+        // Delegate to RandomUtils which has correct right-to-left Luhn checksum.
+        // The old implementation doubled from left-to-right producing invalid IMEIs.
+        return cleveres.tricky.cleverestech.util.RandomUtils.generateLuhn(15, "35")
     }
 
     private fun generateFallbackImsi(): String {
@@ -251,20 +242,16 @@ object TelephonyInterceptor : BinderInterceptor() {
                 }
 
                 val modulePath = getModulePath()
-                val p = Runtime.getRuntime().exec(
-                    arrayOf(
-                        "$modulePath/inject",
-                        pid.toString(),
-                        "$modulePath/libcleverestricky.so",
-                        "entry"
-                    )
-                )
+                val abi = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
+                val p = ProcessBuilder(
+                    "$modulePath/lib/$abi/inject",
+                    pid.toString(),
+                    "$modulePath/libcleverestricky.so",
+                    "entry"
+                ).redirectErrorStream(true).start()
                 try {
                     p.inputStream.readBytes()
                 } catch (_: Exception) {}
-                finally {
-                    try { p.errorStream.readBytes() } catch (_: Exception) {}
-                }
                 if (p.waitFor() != 0) {
                     Logger.e("Telephony: failed to inject!")
                 } else {
