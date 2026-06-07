@@ -36,7 +36,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-
     signingConfigs {
         create("release") {
             if (project.hasProperty("RELEASE_KEYSTORE")) {
@@ -61,7 +60,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName(if (project.hasProperty("RELEASE_KEYSTORE") || project.hasProperty("BETA_KEYSTORE")) "release" else "debug")
+            val signingKey =
+                if (project.hasProperty("RELEASE_KEYSTORE") || project.hasProperty("BETA_KEYSTORE")) {
+                    "release"
+                } else {
+                    "debug"
+                }
+            signingConfig = signingConfigs.getByName(signingKey)
         }
         forEach {
             val checksum = calculateChecksum(it.name)
@@ -89,11 +94,12 @@ android {
         unitTests.all {
             it.jvmArgs("-XX:+EnableDynamicAgentLoading")
             it.testLogging {
-                events = setOf(
-                    org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT,
-                    org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR,
-                    org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED
-                )
+                events =
+                    setOf(
+                        org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT,
+                        org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_ERROR,
+                        org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED,
+                    )
                 exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
             }
         }
