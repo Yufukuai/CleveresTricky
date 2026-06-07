@@ -28,7 +28,6 @@ android {
             cmake {
                 arguments(
                     "-Wno-dev",
-
                     "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
                     "-DANDROID_ALLOW_UNDEFINED_SYMBOLS=ON",
                     "-DANDROID_USE_LEGACY_TOOLCHAIN_FILE=OFF",
@@ -56,9 +55,7 @@ android {
     }
 }
 
-dependencies {
-
-}
+dependencies {}
 
 evaluationDependsOn(":service")
 
@@ -66,10 +63,11 @@ evaluationDependsOn(":service")
 val isWindowsHost = org.gradle.internal.os.OperatingSystem.current().isWindows
 
 fun commandExists(command: String): Boolean {
-    val pathEntries = System.getenv("PATH")
-        ?.split(File.pathSeparator)
-        ?.filter { it.isNotBlank() }
-        ?: return false
+    val pathEntries =
+        System.getenv("PATH")
+            ?.split(File.pathSeparator)
+            ?.filter { it.isNotBlank() }
+            ?: return false
 
     return if (isWindowsHost) {
         val extensions = listOf(".exe", ".cmd", ".bat")
@@ -104,11 +102,13 @@ tasks.register<Exec>("installRustTargets") {
     // We run rustup target add for all required targets.
     // Ideally we should check if they are installed, but `rustup target add` is idempotent and fast if already installed.
     commandLine(
-        "rustup", "target", "add",
+        "rustup",
+        "target",
+        "add",
         "aarch64-linux-android",
         "armv7-linux-androideabi",
         "x86_64-linux-android",
-        "i686-linux-android"
+        "i686-linux-android",
     )
     // Ensure cargo-ndk is installed first (though not strictly dependent, good for ordering)
     dependsOn("installCargoNdk")
@@ -127,12 +127,18 @@ tasks.register<Exec>("cargoBuild") {
 
     // Using cargo-ndk to build for all supported ABIs.
     commandLine(
-        "cargo", "ndk",
-        "-t", "arm64-v8a",
-        "-t", "armeabi-v7a",
-        "-t", "x86_64",
-        "-t", "x86",
-        "build", "--release"
+        "cargo",
+        "ndk",
+        "-t",
+        "arm64-v8a",
+        "-t",
+        "armeabi-v7a",
+        "-t",
+        "x86_64",
+        "-t",
+        "x86",
+        "build",
+        "--release",
     )
 
     doLast {
@@ -167,26 +173,28 @@ afterEvaluate {
         val variantCapped = buildType.name.capitalizeUS()
         val buildTypeCapped = buildType.name.replaceFirstChar { it.uppercase() }
         val buildTypeLowered = buildType.name.lowercase()
-        val supportedAbis = abiList.map {
-            when (it) {
-                "arm64-v8a" -> "arm64"
-                "armeabi-v7a" -> "arm"
-                "x86" -> "x86"
-                "x86_64" -> "x64"
-                else -> error("unsupported abi $it")
-            }
-        }.joinToString(" ")
+        val supportedAbis =
+            abiList.map {
+                when (it) {
+                    "arm64-v8a" -> "arm64"
+                    "armeabi-v7a" -> "arm"
+                    "x86" -> "x86"
+                    "x86_64" -> "x64"
+                    else -> error("unsupported abi $it")
+                }
+            }.joinToString(" ")
 
         val moduleDir = layout.buildDirectory.file("outputs/module/$variantLowered")
         val zipFileName =
             "$moduleName-$verName-$verCode-$commitHash-$buildTypeLowered.zip".replace(' ', '-')
 
-        val prepareModuleFilesTask = tasks.register<Sync>("prepareModuleFiles$variantCapped") {
-            group = "module"
-            dependsOn(
-                "assemble$variantCapped",
-                ":service:package$buildTypeCapped"
-            )
+        val prepareModuleFilesTask =
+            tasks.register<Sync>("prepareModuleFiles$variantCapped") {
+                group = "module"
+                dependsOn(
+                    "assemble$variantCapped",
+                    ":service:package$buildTypeCapped",
+                )
             into(moduleDir)
             from(rootProject.layout.projectDirectory.file("README.md"))
             from(layout.projectDirectory.file("template")) {
@@ -206,12 +214,13 @@ afterEvaluate {
             }
             from(layout.projectDirectory.file("template")) {
                 include("customize.sh", "post-fs-data.sh", "service.sh", "daemon", "provision_attestation.sh")
-                val tokens = mapOf(
-                    "DEBUG" to if (buildTypeLowered == "debug") "true" else "false",
-                    "SONAME" to moduleId,
-                    "SUPPORTED_ABIS" to supportedAbis,
-                    "MIN_SDK" to androidMinSdkVersion.toString()
-                )
+                val tokens =
+                    mapOf(
+                        "DEBUG" to if (buildTypeLowered == "debug") "true" else "false",
+                        "SONAME" to moduleId,
+                        "SUPPORTED_ABIS" to supportedAbis,
+                        "MIN_SDK" to androidMinSdkVersion.toString(),
+                    )
                 filter<ReplaceTokens>("tokens" to tokens)
                 filter<FixCrLfFilter>("eol" to FixCrLfFilter.CrLf.newInstance("lf"))
             }
@@ -219,7 +228,11 @@ afterEvaluate {
                 include("*.apk")
                 rename(".*\\.apk", "service.apk")
             }
-            from(layout.buildDirectory.file("intermediates/stripped_native_libs/$variantLowered/strip${variantCapped}DebugSymbols/out/lib")) {
+            from(
+                layout.buildDirectory.file(
+                    "intermediates/stripped_native_libs/$variantLowered/strip${variantCapped}DebugSymbols/out/lib",
+                ),
+            ) {
                 exclude("**/libbinder.so", "**/libutils.so")
                 into("lib")
             }
@@ -268,50 +281,57 @@ afterEvaluate {
                     }
                     file(file.path + ".sha256").writeText(
                         org.apache.commons.codec.binary.Hex.encodeHexString(
-                            md.digest()
-                        )
+                            md.digest(),
+                        ),
                     )
                 }
             }
         }
 
-        val zipTask = tasks.register<Zip>("zip$variantCapped") {
-            group = "module"
-            dependsOn(prepareModuleFilesTask)
-            archiveFileName.set(zipFileName)
-            destinationDirectory.set(layout.projectDirectory.file("release").asFile)
-            from(moduleDir)
-        }
-
-        val pushTask = tasks.register<Exec>("push$variantCapped") {
-            group = "module"
-            dependsOn(zipTask)
-            doFirst {
-                commandLine("adb", "push", zipTask.get().outputs.files.singleFile.path, "/data/local/tmp")
+        val zipTask =
+            tasks.register<Zip>("zip$variantCapped") {
+                group = "module"
+                dependsOn(prepareModuleFilesTask)
+                archiveFileName.set(zipFileName)
+                destinationDirectory.set(layout.projectDirectory.file("release").asFile)
+                from(moduleDir)
             }
-        }
 
-        val installKsuTask = tasks.register<Exec>("installKsu$variantCapped") {
-            group = "module"
-            dependsOn(pushTask)
-            commandLine(
-                "adb", "shell", "su", "-c",
-                "/data/adb/ksud module install /data/local/tmp/$zipFileName"
-            )
-        }
+        val pushTask =
+            tasks.register<Exec>("push$variantCapped") {
+                group = "module"
+                dependsOn(zipTask)
+                doFirst {
+                    commandLine("adb", "push", zipTask.get().outputs.files.singleFile.path, "/data/local/tmp")
+                }
+            }
 
-        val installMagiskTask = tasks.register<Exec>("installMagisk$variantCapped") {
-            group = "module"
-            dependsOn(pushTask)
-            commandLine(
-                "adb",
-                "shell",
-                "su",
-                "-M",
-                "-c",
-                "magisk --install-module /data/local/tmp/$zipFileName"
-            )
-        }
+        val installKsuTask =
+            tasks.register<Exec>("installKsu$variantCapped") {
+                group = "module"
+                dependsOn(pushTask)
+                commandLine(
+                    "adb",
+                    "shell",
+                    "su",
+                    "-c",
+                    "/data/adb/ksud module install /data/local/tmp/$zipFileName",
+                )
+            }
+
+        val installMagiskTask =
+            tasks.register<Exec>("installMagisk$variantCapped") {
+                group = "module"
+                dependsOn(pushTask)
+                commandLine(
+                    "adb",
+                    "shell",
+                    "su",
+                    "-M",
+                    "-c",
+                    "magisk --install-module /data/local/tmp/$zipFileName",
+                )
+            }
 
         tasks.register<Exec>("installKsuAndReboot$variantCapped") {
             group = "module"
