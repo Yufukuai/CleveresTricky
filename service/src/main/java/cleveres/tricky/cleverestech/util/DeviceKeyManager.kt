@@ -117,8 +117,8 @@ object DeviceKeyManager {
             val key = getKey() ?: return null
             if (data.isEmpty()) return null
 
-            val ivLen = data[0].toInt()
-            if (ivLen < 0 || ivLen > data.size - 1) return null
+            val ivLen = data[0].toInt() and 0xFF
+            if (ivLen > data.size - 1) return null
 
             val iv = ByteArray(ivLen)
             System.arraycopy(data, 1, iv, 0, ivLen)

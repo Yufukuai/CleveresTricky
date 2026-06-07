@@ -53,6 +53,12 @@ object VbMetaParser {
                 val absoluteOffset = HEADER_SIZE + authDataBlockSize + publicKeyOffset
                 file.seek(absoluteOffset)
 
+                // Sanity check: cap at 16MB to prevent OOM from malformed vbmeta
+                if (publicKeySize > 16 * 1024 * 1024) {
+                    Logger.e("VbMetaParser: Unreasonable public key size: $publicKeySize")
+                    return null
+                }
+
                 val keyBytes = ByteArray(publicKeySize.toInt())
                 if (file.read(keyBytes) != keyBytes.size) {
                     Logger.e("VbMetaParser: Failed to read public key bytes")

@@ -152,7 +152,7 @@ class SecurityLevelInterceptor(
                 val keyDescriptor =
                     data.readTypedObject(KeyDescriptor.CREATOR) ?: return Skip
                 val attestationKeyDescriptor = data.readTypedObject(KeyDescriptor.CREATOR)
-                val params = data.createTypedArray(KeyParameter.CREATOR)!!
+                val params = data.createTypedArray(KeyParameter.CREATOR) ?: return Skip
                 // val aFlags = data.readInt()
                 // val entropy = data.createByteArray()
                 val kgp = KeyGenParameters(params)

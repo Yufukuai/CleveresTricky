@@ -25,7 +25,7 @@ import kotlinx.coroutines.Dispatchers
 object DrmInterceptor : BinderInterceptor() {
 
     @Volatile private var drmBinder: IBinder? = null
-    @Volatile private var triedCount = 0
+    private val triedCount = java.util.concurrent.atomic.AtomicInteger(0)
     @Volatile private var injected = false
     @Volatile private var isInjecting = false
 
@@ -278,13 +278,13 @@ object DrmInterceptor : BinderInterceptor() {
         val b = findDrmService()
         if (b == null) {
             Logger.d("DRM: Service not found, will retry")
-            triedCount += 1
+            triedCount.incrementAndGet()
             return false
         }
 
         val bd = getBinderBackdoor(b)
         if (bd == null) {
-            if (triedCount >= 3) {
+            if (triedCount.get() >= 3) {
                 Logger.e("DRM: Exhausted $triedCount injection attempts, giving up")
                 return false
             }
@@ -295,7 +295,7 @@ object DrmInterceptor : BinderInterceptor() {
                 val pid = findDrmServicePid()
                 if (pid == null) {
                     Logger.e("DRM: Cannot find DRM service PID in /proc")
-                    triedCount += 1
+                    triedCount.incrementAndGet()
                     return false
                 }
 
@@ -330,7 +330,7 @@ object DrmInterceptor : BinderInterceptor() {
                     }
                 }.start()
             }
-            triedCount += 1
+            triedCount.incrementAndGet()
             return false
         }
 
@@ -340,7 +340,7 @@ object DrmInterceptor : BinderInterceptor() {
         b.linkToDeath({
             Logger.e("DRM: Service died — resetting state for re-injection")
             injected = false
-            triedCount = 0
+            triedCount.set(0)
             drmBinder = null
             cachedDrmConfigTime = 0 // Force config refresh on next transaction
         }, 0)

@@ -142,9 +142,12 @@ fun String.convertPatchLevel(long: Boolean): Int {
                 return if (long) 20240101 else 202401
             }
         } else {
-            if (partIndex == 0) year = currentPart
-            else if (partIndex == 1) month = currentPart
-            else if (partIndex == 2) day = currentPart
+            // Assign last part that wasn't followed by a dash
+            when (partIndex) {
+                0 -> year = currentPart
+                1 -> month = currentPart
+                2 -> day = currentPart
+            }
             if (day == 0) day = 1
         }
 
