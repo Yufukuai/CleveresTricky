@@ -79,7 +79,10 @@ object TelephonyInterceptor : BinderInterceptor() {
         if (!Config.needHack(callingUid)) return Skip
 
         val pos = reply.dataPosition()
-        if (kotlin.runCatching { reply.readException() }.exceptionOrNull() != null) {
+        // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+        try {
+            reply.readException()
+        } catch (e: Exception) {
             reply.setDataPosition(pos)
             return Skip
         }
