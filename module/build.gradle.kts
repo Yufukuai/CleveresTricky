@@ -195,98 +195,98 @@ afterEvaluate {
                     "assemble$variantCapped",
                     ":service:package$buildTypeCapped",
                 )
-            into(moduleDir)
-            from(rootProject.layout.projectDirectory.file("README.md"))
-            from(layout.projectDirectory.file("template")) {
-                exclude("module.prop", "customize.sh", "post-fs-data.sh", "service.sh", "daemon", "provision_attestation.sh")
-                filter<FixCrLfFilter>("eol" to FixCrLfFilter.CrLf.newInstance("lf"))
-            }
-            from(layout.projectDirectory.file("template")) {
-                include("module.prop")
-                expand(
-                    "moduleId" to moduleId,
-                    "moduleName" to moduleName,
-                    "versionName" to "$verName ($verCode-$commitHash-$variantLowered)",
-                    "versionCode" to verCode,
-                    "author" to author,
-                    "description" to moduleDescription,
-                )
-            }
-            from(layout.projectDirectory.file("template")) {
-                include("customize.sh", "post-fs-data.sh", "service.sh", "daemon", "provision_attestation.sh")
-                val tokens =
-                    mapOf(
-                        "DEBUG" to if (buildTypeLowered == "debug") "true" else "false",
-                        "SONAME" to moduleId,
-                        "SUPPORTED_ABIS" to supportedAbis,
-                        "MIN_SDK" to androidMinSdkVersion.toString(),
-                    )
-                filter<ReplaceTokens>("tokens" to tokens)
-                filter<FixCrLfFilter>("eol" to FixCrLfFilter.CrLf.newInstance("lf"))
-            }
-            from(project(":service").tasks.getByName("package$buildTypeCapped").outputs) {
-                include("*.apk")
-                rename(".*\\.apk", "service.apk")
-            }
-            from(
-                layout.buildDirectory.file(
-                    "intermediates/stripped_native_libs/$variantLowered/strip${variantCapped}DebugSymbols/out/lib",
-                ),
-            ) {
-                exclude("**/libbinder.so", "**/libutils.so")
-                into("lib")
-            }
-
-            from(layout.buildDirectory.dir("intermediates/cxx")) {
-                include("**/inject")
-                eachFile {
-                    val segments = relativePath.segments
-                    // For release builds, we might have RelWithDebInfo, Release, or MinSizeRel directories
-                    // For debug builds, we expect Debug directory
-                    if (buildTypeLowered == "release" && segments.contains("Debug")) {
-                        exclude()
-                        return@eachFile
-                    }
-                    if (buildTypeLowered == "debug" && !segments.contains("Debug")) {
-                        exclude()
-                        return@eachFile
-                    }
-
-                    val abi = segments.find { it in abiList }
-                    if (abi != null) {
-                        relativePath = RelativePath(true, "lib", abi, "inject")
-                    }
+                into(moduleDir)
+                from(rootProject.layout.projectDirectory.file("README.md"))
+                from(layout.projectDirectory.file("template")) {
+                    exclude("module.prop", "customize.sh", "post-fs-data.sh", "service.sh", "daemon", "provision_attestation.sh")
+                    filter<FixCrLfFilter>("eol" to FixCrLfFilter.CrLf.newInstance("lf"))
                 }
-                includeEmptyDirs = false
-            }
-
-            doLast {
-                val apk = file("${moduleDir.get().asFile}/service.apk")
-                if (!apk.exists() || apk.length() == 0L) {
-                    throw GradleException("service.apk is missing or empty!")
-                }
-
-                abiList.forEach { abi ->
-                    val injectPath = file("${moduleDir.get().asFile}/lib/$abi/inject")
-                    if (!injectPath.exists()) {
-                        throw GradleException("inject binary for $abi is missing at $injectPath")
-                    }
-                }
-
-                fileTree(moduleDir).visit {
-                    if (isDirectory) return@visit
-                    val md = MessageDigest.getInstance("SHA-256")
-                    file.forEachBlock(4096) { bytes, size ->
-                        md.update(bytes, 0, size)
-                    }
-                    file(file.path + ".sha256").writeText(
-                        org.apache.commons.codec.binary.Hex.encodeHexString(
-                            md.digest(),
-                        ),
+                from(layout.projectDirectory.file("template")) {
+                    include("module.prop")
+                    expand(
+                        "moduleId" to moduleId,
+                        "moduleName" to moduleName,
+                        "versionName" to "$verName ($verCode-$commitHash-$variantLowered)",
+                        "versionCode" to verCode,
+                        "author" to author,
+                        "description" to moduleDescription,
                     )
                 }
+                from(layout.projectDirectory.file("template")) {
+                    include("customize.sh", "post-fs-data.sh", "service.sh", "daemon", "provision_attestation.sh")
+                    val tokens =
+                        mapOf(
+                            "DEBUG" to if (buildTypeLowered == "debug") "true" else "false",
+                            "SONAME" to moduleId,
+                            "SUPPORTED_ABIS" to supportedAbis,
+                            "MIN_SDK" to androidMinSdkVersion.toString(),
+                        )
+                    filter<ReplaceTokens>("tokens" to tokens)
+                    filter<FixCrLfFilter>("eol" to FixCrLfFilter.CrLf.newInstance("lf"))
+                }
+                from(project(":service").tasks.getByName("package$buildTypeCapped").outputs) {
+                    include("*.apk")
+                    rename(".*\\.apk", "service.apk")
+                }
+                from(
+                    layout.buildDirectory.file(
+                        "intermediates/stripped_native_libs/$variantLowered/strip${variantCapped}DebugSymbols/out/lib",
+                    ),
+                ) {
+                    exclude("**/libbinder.so", "**/libutils.so")
+                    into("lib")
+                }
+
+                from(layout.buildDirectory.dir("intermediates/cxx")) {
+                    include("**/inject")
+                    eachFile {
+                        val segments = relativePath.segments
+                        // For release builds, we might have RelWithDebInfo, Release, or MinSizeRel directories
+                        // For debug builds, we expect Debug directory
+                        if (buildTypeLowered == "release" && segments.contains("Debug")) {
+                            exclude()
+                            return@eachFile
+                        }
+                        if (buildTypeLowered == "debug" && !segments.contains("Debug")) {
+                            exclude()
+                            return@eachFile
+                        }
+
+                        val abi = segments.find { it in abiList }
+                        if (abi != null) {
+                            relativePath = RelativePath(true, "lib", abi, "inject")
+                        }
+                    }
+                    includeEmptyDirs = false
+                }
+
+                doLast {
+                    val apk = file("${moduleDir.get().asFile}/service.apk")
+                    if (!apk.exists() || apk.length() == 0L) {
+                        throw GradleException("service.apk is missing or empty!")
+                    }
+
+                    abiList.forEach { abi ->
+                        val injectPath = file("${moduleDir.get().asFile}/lib/$abi/inject")
+                        if (!injectPath.exists()) {
+                            throw GradleException("inject binary for $abi is missing at $injectPath")
+                        }
+                    }
+
+                    fileTree(moduleDir).visit {
+                        if (isDirectory) return@visit
+                        val md = MessageDigest.getInstance("SHA-256")
+                        file.forEachBlock(4096) { bytes, size ->
+                            md.update(bytes, 0, size)
+                        }
+                        file(file.path + ".sha256").writeText(
+                            org.apache.commons.codec.binary.Hex.encodeHexString(
+                                md.digest(),
+                            ),
+                        )
+                    }
+                }
             }
-        }
 
         val zipTask =
             tasks.register<Zip>("zip$variantCapped") {
