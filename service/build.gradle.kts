@@ -59,7 +59,7 @@ android {
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             signingConfig = signingConfigs.getByName(if (project.hasProperty("RELEASE_KEYSTORE") || project.hasProperty("BETA_KEYSTORE")) "release" else "debug")
         }
@@ -136,32 +136,52 @@ afterEvaluate {
     android.buildTypes.forEach { buildType ->
         val variantLowered = buildType.name.lowercase()
         val variantCapped = buildType.name.capitalizeUS()
-        val pushTask = tasks.register<Task>("pushService$variantCapped") {
-            group = "Service"
-            dependsOn("assemble$variantCapped")
-            doLast {
-                ProcessBuilder(
-                    "adb",
-                    "push",
-                    layout.buildDirectory.file("outputs/apk/$variantLowered/service-$variantLowered.apk")
-                        .get().asFile.absolutePath,
-                    "/data/local/tmp/service.apk"
-                ).inheritIO().start().waitFor().let { if (it != 0) throw GradleException("Command failed with exit code $it") }
-                ProcessBuilder(
-                    "adb",
-                    "shell",
-                    "su",
-                    "-c",
-                    "rm /data/adb/modules/cleverestricky/service.apk; mv /data/local/tmp/service.apk /data/adb/modules/cleverestricky/"
-                ).inheritIO().start().waitFor().let { if (it != 0) throw GradleException("Command failed with exit code $it") }
+
+        val pushTask =
+            tasks.register<Task>("pushService$variantCapped") {
+                group = "Service"
+                dependsOn("assemble$variantCapped")
+                doLast {
+                    ProcessBuilder(
+                        "adb",
+                        "push",
+                        layout.buildDirectory.file("outputs/apk/$variantLowered/service-$variantLowered.apk").get().asFile.absolutePath,
+                        "/data/local/tmp/service.apk",
+                    ).inheritIO().start().waitFor().let {
+                        if (it != 0) {
+                            throw GradleException("Command failed with exit code $it")
+                        }
+                    }
+
+                    ProcessBuilder(
+                        "adb",
+                        "shell",
+                        "su",
+                        "-c",
+                        "rm /data/adb/modules/cleverestricky/service.apk; mv /data/local/tmp/service.apk /data/adb/modules/cleverestricky/",
+                    ).inheritIO().start().waitFor().let {
+                        if (it != 0) {
+                            throw GradleException("Command failed with exit code $it")
+                        }
+                    }
+                }
             }
-        }
 
         tasks.register<Task>("pushAndRestartService$variantCapped") {
             group = "Service"
             dependsOn(pushTask)
             doLast {
-                ProcessBuilder("adb", "shell", "su", "-c", "setprop ctl.restart keystore2").inheritIO().start().waitFor().let { if (it != 0) throw GradleException("Command failed with exit code $it") }
+                ProcessBuilder(
+                    "adb",
+                    "shell",
+                    "su",
+                    "-c",
+                    "setprop ctl.restart keystore2",
+                ).inheritIO().start().waitFor().let {
+                    if (it != 0) {
+                        throw GradleException("Command failed with exit code $it")
+                    }
+                }
             }
         }
     }
