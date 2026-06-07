@@ -15,5 +15,6 @@ If you find this project helpful, consider supporting the development. Your cont
 *   **Binance User ID:** `114574830`
 *   **PayPal:** [paypal.me/tryigitx](https://www.paypal.me/tryigitx)
 *   **BuyMeACoffee:** [buymeacoffee.com/yigitx](https://buymeacoffee.com/yigitx)
+*   **Self Website:** [tryigit.dev/donate](https://tryigit.dev/donate)
 
 Thank you for your support!
