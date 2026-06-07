@@ -37,20 +37,24 @@ object KeystoreInterceptor : BinderInterceptor() {
         if (code == getKeyEntryTransaction) {
             if (CertHack.canHack()) {
                 Logger.d { "intercept pre  $target uid=$callingUid pid=$callingPid dataSz=${data.dataSize()}" }
-                if (Config.needGenerate(callingUid))
-                    kotlin.runCatching {
+                if (Config.needGenerate(callingUid)) {
+                    // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+                    try {
                         data.enforceInterface(IKeystoreService.DESCRIPTOR)
                         val descriptor =
-                            data.readTypedObject(KeyDescriptor.CREATOR) ?: return@runCatching
+                            data.readTypedObject(KeyDescriptor.CREATOR) ?: return Skip
                         val response =
                             SecurityLevelInterceptor.getKeyResponse(callingUid, descriptor.alias)
-                            ?: return@runCatching
+                            ?: return Skip
                         Logger.i("generate key for uid=$callingUid alias=${descriptor.alias}")
                         val p = Parcel.obtain()
                         p.writeNoException()
                         p.writeTypedObject(response, 0)
                         return OverrideReply(0, p)
+                    } catch (e: Exception) {
+                        // Ignore and fallback to Skip
                     }
+                }
                 else if (Config.needHack(callingUid)) return Continue
                 return Skip
             }
@@ -69,7 +73,8 @@ object KeystoreInterceptor : BinderInterceptor() {
         resultCode: Int
     ): Result {
         if (target != keystore || code != getKeyEntryTransaction || reply == null) return Skip
-        if (kotlin.runCatching { reply.readException() }.exceptionOrNull() != null) return Skip
+        // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+        try { reply.readException() } catch (e: Exception) { return Skip }
         val p = Parcel.obtain()
         Logger.d { "intercept post $target uid=$callingUid pid=$callingPid dataSz=${data.dataSize()} replySz=${reply.dataSize()}" }
         try {

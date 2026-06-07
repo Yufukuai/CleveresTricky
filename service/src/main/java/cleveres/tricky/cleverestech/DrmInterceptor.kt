@@ -114,7 +114,10 @@ object DrmInterceptor : BinderInterceptor() {
         if (propertyName != DrmOverrideLogic.SECURITY_LEVEL_PROPERTY) return Skip
 
         val pos = reply.dataPosition()
-        if (kotlin.runCatching { reply.readException() }.exceptionOrNull() != null) {
+        // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+        try {
+            reply.readException()
+        } catch (e: Exception) {
             reply.setDataPosition(pos)
             return Skip
         }
@@ -149,7 +152,10 @@ object DrmInterceptor : BinderInterceptor() {
         if (propertyName != DrmOverrideLogic.DEVICE_UNIQUE_ID_PROPERTY) return Skip
         if (!DrmOverrideLogic.shouldSpoofDeviceUniqueId(propertyName, cachedRandomDrmOnBoot)) return Skip
         val pos = reply.dataPosition()
-        if (kotlin.runCatching { reply.readException() }.exceptionOrNull() != null) {
+        // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+        try {
+            reply.readException()
+        } catch (e: Exception) {
             reply.setDataPosition(pos)
             return Skip
         }

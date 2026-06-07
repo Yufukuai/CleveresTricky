@@ -87,10 +87,11 @@ class SecurityLevelInterceptor(
     ): Result {
         if (code == createOperationTransaction && Config.needGenerate(callingUid)) {
             Logger.i("intercept createOperation uid=$callingUid pid=$callingPid")
-            kotlin.runCatching {
+            // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+            try {
                 data.enforceInterface(IKeystoreSecurityLevel.DESCRIPTOR)
-                val keyDescriptor = data.readTypedObject(KeyDescriptor.CREATOR) ?: return@runCatching
-                val operationParameters = data.createTypedArray(KeyParameter.CREATOR) ?: return@runCatching
+                val keyDescriptor = data.readTypedObject(KeyDescriptor.CREATOR) ?: return Skip
+                val operationParameters = data.createTypedArray(KeyParameter.CREATOR) ?: return Skip
                 val forced = data.readBoolean()
 
                 // Track and enforce op limit
@@ -138,17 +139,18 @@ class SecurityLevelInterceptor(
                     // OR if it's a pure software mocked key, we might need to mock the response.
                     // Let's just track it and let the system handle it, or mock if we must.
                 }
-            }.onFailure {
+            } catch (it: Exception) {
                 Logger.e("parse createOperation request", it)
             }
         }
 
         if (code == generateKeyTransaction && Config.needGenerate(callingUid)) {
             Logger.i("intercept key gen uid=$callingUid pid=$callingPid")
-            kotlin.runCatching {
+            // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+            try {
                 data.enforceInterface(IKeystoreSecurityLevel.DESCRIPTOR)
                 val keyDescriptor =
-                    data.readTypedObject(KeyDescriptor.CREATOR) ?: return@runCatching
+                    data.readTypedObject(KeyDescriptor.CREATOR) ?: return Skip
                 val attestationKeyDescriptor = data.readTypedObject(KeyDescriptor.CREATOR)
                 val params = data.createTypedArray(KeyParameter.CREATOR)!!
                 // val aFlags = data.readInt()
@@ -171,7 +173,7 @@ class SecurityLevelInterceptor(
                     }
                     val startNanos = System.nanoTime()
                     val pair = CertHack.generateKeyPair(callingUid, keyDescriptor, kgp, issuerKeyPair, issuerChain)
-                        ?: return@runCatching
+                        ?: return Skip
                     cleveres.tricky.cleverestech.util.TeeLatencySimulator.simulateGenerateKeyDelay(kgp.algorithm, System.nanoTime() - startNanos)
                     val response = buildResponse(pair.second, kgp, keyDescriptor, callingUid)
                     keys[Key(callingUid, keyDescriptor.alias)] = Info(pair.first, response)
@@ -180,7 +182,7 @@ class SecurityLevelInterceptor(
                     p.writeTypedObject(response.metadata, 0)
                     return OverrideReply(0, p)
                 }
-            }.onFailure {
+            } catch (it: Exception) {
                 Logger.e("parse key gen request", it)
             }
         }

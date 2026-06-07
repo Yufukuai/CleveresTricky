@@ -98,7 +98,8 @@ class RkpInterceptor(
 
     // returns fake hardware info that matches what Google expects
     private fun interceptGetHardwareInfo(): Result {
-        kotlin.runCatching {
+        // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+        try {
             val override = RemoteKeyManager.getHardwareInfo()
             val info = override ?: RpcHardwareInfo().apply {
                 versionNumber = 3 // android 14+ uses version 3
@@ -112,7 +113,7 @@ class RkpInterceptor(
             p.writeNoException()
             p.writeTypedObject(info, 0)
             return OverrideReply(0, p)
-        }.onFailure {
+        } catch (it: Exception) {
             Logger.e("failed to intercept getHardwareInfo", it)
         }
         return Skip
@@ -120,7 +121,8 @@ class RkpInterceptor(
 
     // generates a new EC P-256 key pair and wraps it in COSE format
     private fun interceptKeyPairGeneration(uid: Int, data: Parcel): Result {
-        kotlin.runCatching {
+        // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+        try {
             data.enforceInterface(IRemotelyProvisionedComponent.DESCRIPTOR)
             val testMode = data.readInt() != 0
             
@@ -162,7 +164,7 @@ class RkpInterceptor(
             p.writeByteArray(privateKeyHandle)
             
             return OverrideReply(0, p)
-        }.onFailure {
+        } catch (it: Exception) {
             Logger.e("failed to intercept key pair generation for uid=$uid", it)
         }
         return Skip
@@ -170,7 +172,8 @@ class RkpInterceptor(
 
     // handles both v1 and v2 cert request formats
     private fun interceptCertificateRequest(uid: Int, data: Parcel, isV2: Boolean): Result {
-        kotlin.runCatching {
+        // Optimization: Replace runCatching with try-catch to avoid Result object allocation in hot path
+        try {
             data.enforceInterface(IRemotelyProvisionedComponent.DESCRIPTOR)
             
             val keysToSign: Array<MacedPublicKey>?
@@ -207,7 +210,7 @@ class RkpInterceptor(
             }
             
             return OverrideReply(0, p)
-        }.onFailure {
+        } catch (it: Exception) {
             Logger.e("failed to intercept certificate request for uid=$uid", it)
         }
         return Skip
