@@ -12,11 +12,44 @@ permissions:
 
 jobs:
   # ============================================================
-  # Phase 1: Rust Tests & Linters
+  # Phase 1: Quality Gate & Linting
+  # ============================================================
+  quality-gate:
+    name: "🛡️ Quality Gate & Linting"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: "🐚 Shell Script Linting (Shellcheck)"
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck module/template/*.sh || echo "::warning::Shellcheck found issues (suppressed for now to avoid breaking existing code)"
+
+      - name: "🎨 Kotlin Format & Quality (Ktlint)"
+        run: ./gradlew ktlintCheck
+
+      - name: "📱 Android Static Analysis (Lint)"
+        run: ./gradlew lintDebug
+
+  # ============================================================
+  # Phase 2: Rust Tests & Linters
   # ============================================================
   rust-test:
     name: "🦀 Rust Checks & Tests"
     runs-on: ubuntu-latest
+    needs: quality-gate
     env:
       RUSTFLAGS: "-D warnings"
     defaults:

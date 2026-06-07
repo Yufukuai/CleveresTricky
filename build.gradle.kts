@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.agp.app) apply false
     alias(libs.plugins.jetbrains.kotlin.android) apply false
     alias(libs.plugins.android.library) apply false
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.1" apply false
 }
 
 fun String.execute(currentWorkingDir: File = file("./")): String {
@@ -112,5 +113,15 @@ subprojects {
 
     tasks.withType<JavaCompile>().configureEach {
         options.compilerArgs.addAll(listOf("-Werror", "-Xlint:all", "-Xlint:-options", "-Xlint:-path", "-Xlint:-rawtypes", "-Xlint:-unchecked", "-Xlint:-this-escape"))
+    }
+    
+    project.plugins.apply("org.jlleitschuh.gradle.ktlint")
+    
+    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+        debug.set(false)
+        version.set("1.2.1")
+        enableExperimentalRules.set(false)
+        outputToConsole.set(true)
+        ignoreFailures.set(false)
     }
 }
