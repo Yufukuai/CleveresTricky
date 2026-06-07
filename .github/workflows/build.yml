@@ -226,7 +226,8 @@ jobs:
           FILES=$(grep -rl 'exitProcess(1)' --include="*.kt" service/ 2>/dev/null || true)
           EXIT1_COUNT=0
           for f in $FILES; do
-            LINES=$(grep -c 'exitProcess(1)' "$f" 2>/dev/null || echo "0")
+            LINES=$(grep -c 'exitProcess(1)' "$f" 2>/dev/null || true)
+            if [ -z "$LINES" ]; then LINES=0; fi
             EXIT1_COUNT=$((EXIT1_COUNT + LINES))
           done
 
@@ -252,13 +253,14 @@ jobs:
           DRM_FILE="service/src/main/java/cleveres/tricky/cleverestech/DrmInterceptor.kt"
           if [ -f "$DRM_FILE" ]; then
             # Count triedCount increments — must be at least 2 (service-not-found + injection-failed)
-            INC_COUNT=$(grep -c 'triedCount += 1' "$DRM_FILE" 2>/dev/null || echo "0")
+            INC_COUNT=$(grep -cE 'triedCount \+= 1|triedCount\.incrementAndGet\(\)' "$DRM_FILE" 2>/dev/null || true)
+            if [ -z "$INC_COUNT" ]; then INC_COUNT=0; fi
             if [ "$INC_COUNT" -lt 2 ]; then
               echo "::error file=$DRM_FILE::DrmInterceptor has only $INC_COUNT triedCount increments — needs at least 2 (service-not-found + injection-failed paths)"
               ERRORS=$((ERRORS + 1))
             fi
             # Must have retry limit
-            if ! grep -q 'triedCount >= 3' "$DRM_FILE" 2>/dev/null; then
+            if ! grep -qE 'triedCount(\.get\(\))? >= 3' "$DRM_FILE" 2>/dev/null; then
               echo "::error file=$DRM_FILE::DrmInterceptor missing retry limit (triedCount >= 3)"
               ERRORS=$((ERRORS + 1))
             fi
@@ -266,7 +268,7 @@ jobs:
 
           TEL_FILE="service/src/main/java/cleveres/tricky/cleverestech/TelephonyInterceptor.kt"
           if [ -f "$TEL_FILE" ]; then
-            if ! grep -q 'triedCount >= 3' "$TEL_FILE" 2>/dev/null; then
+            if ! grep -qE 'triedCount(\.get\(\))? >= 3' "$TEL_FILE" 2>/dev/null; then
               echo "::error file=$TEL_FILE::TelephonyInterceptor missing retry limit"
               ERRORS=$((ERRORS + 1))
             fi
@@ -347,9 +349,11 @@ jobs:
           # any stream handling in the same file.
           WARNINGS=0
           for f in $(find service/src/main/java -name "*.kt" 2>/dev/null); do
-            EXEC_COUNT=$(grep -c 'Runtime.getRuntime().exec' "$f" 2>/dev/null || echo "0")
+            EXEC_COUNT=$(grep -c 'Runtime.getRuntime().exec' "$f" 2>/dev/null || true)
+            if [ -z "$EXEC_COUNT" ]; then EXEC_COUNT=0; fi
             if [ "$EXEC_COUNT" -gt 0 ]; then
-              STREAM_COUNT=$(grep -c 'inputStream\.\|errorStream\.\|ProcessBuilder' "$f" 2>/dev/null || echo "0")
+              STREAM_COUNT=$(grep -c 'inputStream\.\|errorStream\.\|ProcessBuilder' "$f" 2>/dev/null || true)
+              if [ -z "$STREAM_COUNT" ]; then STREAM_COUNT=0; fi
               if [ "$STREAM_COUNT" -eq 0 ]; then
                 echo "::warning file=$f::$EXEC_COUNT Runtime.exec() call(s) without any stream handling — potential FD leak"
                 WARNINGS=$((WARNINGS + 1))
