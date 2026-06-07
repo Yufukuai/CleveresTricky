@@ -179,7 +179,16 @@ class WebServer(
     }
 
     init { cleveres.tricky.cleverestech.util.LoggerConfig.disableNanoHttpdLogging() }
-    val token = UUID.randomUUID().toString()
+    val token: String by lazy {
+        val tokenFile = java.io.File(cleveres.tricky.cleverestech.Config.keyboxDirectory.parentFile, "web_token.txt")
+        if (tokenFile.exists()) {
+            tokenFile.readText().trim()
+        } else {
+            val newToken = UUID.randomUUID().toString()
+            try { tokenFile.writeText(newToken) } catch(e: Exception) {}
+            newToken
+        }
+    }
     private val MAX_UPLOAD_SIZE = 10 * 1024 * 1024L // 10MB for ZIPs
     private val MAX_BODY_SIZE = 5 * 1024 * 1024L // 5MB for non-multipart requests
 
@@ -1333,8 +1342,8 @@ class WebServer(
         :root { --bg: #0B0B0C; --fg: #E5E7EB; --accent: #D1D5DB; --panel: #161616; --border: #333; --input-bg: #1A1A1A; --success: #34D399; --danger: #EF4444; }
         body { background-color: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
         .island-container { display: flex; justify-content: center; position: fixed; top: 20px; width: 100%; z-index: 1000; pointer-events: none; }
-        .island { background: #000; color: #fff; border-radius: 30px; min-height: 35px; width: 120px; display: flex; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 0.8em; font-weight: 500; opacity: 0; transform: translateY(-20px); pointer-events: auto; }
-        .island.active { width: auto; min-width: 250px; padding: 8px 12px 8px 24px; opacity: 1; transform: translateY(0); font-size: 0.9em; min-height: 44px; }
+        .island { background: #000; color: #fff; border-radius: 30px; min-height: 35px; width: auto; max-width: 90%; display: flex; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 0.8em; font-weight: 500; opacity: 0; transform: translateY(-20px) scale(0.9); pointer-events: auto; padding: 0; white-space: nowrap; }
+        .island.active { min-width: 250px; padding: 8px 12px 8px 24px; opacity: 1; transform: translateY(0) scale(1); font-size: 0.9em; min-height: 44px; }
         .island.error { background: #330000; border: 1px solid var(--danger); }
         .island.error #islandText { color: #FECACA; }
         .spinner { width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 10px; display: none; }
@@ -1348,7 +1357,7 @@ class WebServer(
         #islandText { flex: 1; }
         @keyframes spin { to { transform: rotate(360deg); } }
         h1 { text-align: center; font-weight: 200; letter-spacing: 2px; margin: 25px 0; color: var(--accent); font-size: 1.5em; text-transform: uppercase; }
-        .tabs { display: flex; justify-content: center; border-bottom: 1px solid var(--border); background: var(--panel); overflow-x: auto; position: sticky; top: 0; z-index: 100; }
+        .tabs { display: flex; justify-content: flex-start; border-bottom: 1px solid var(--border); background: var(--panel); overflow-x: auto; position: sticky; top: 0; z-index: 100; -webkit-overflow-scrolling: touch; }
         .tab { padding: 15px 20px; cursor: pointer; border-bottom: 2px solid transparent; opacity: 0.6; transition: all 0.2s; white-space: nowrap; font-size: 0.9em; letter-spacing: 1px; min-height: 44px; align-items: center; justify-content: center; box-sizing: border-box; display: inline-flex; }
         .tab:hover { opacity: 0.9; }
         .tab.active { border-bottom-color: var(--accent); opacity: 1; color: var(--accent); }
@@ -1451,16 +1460,16 @@ class WebServer(
     </div>
 
     <div id="dashboard" class="content active" role="tabpanel" aria-labelledby="tab_dashboard">
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <div style="flex: 1; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 120px; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
                 <div style="font-size: 0.8em; color: #888; text-transform: uppercase;">Global Mode</div>
                 <div id="status_global" style="font-weight: bold; color: var(--danger); margin-top: 5px; background: rgba(239, 68, 68, 0.1); padding: 5px; border-radius: 4px;">INACTIVE</div>
             </div>
-            <div style="flex: 1; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
+            <div style="flex: 1; min-width: 120px; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
                 <div style="font-size: 0.8em; color: #888; text-transform: uppercase;">RKP Bypass</div>
                 <div id="status_rkp" style="font-weight: bold; color: var(--danger); margin-top: 5px; background: rgba(239, 68, 68, 0.1); padding: 5px; border-radius: 4px;">INACTIVE</div>
             </div>
-            <div style="flex: 1; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
+            <div style="flex: 1; min-width: 120px; padding: 15px; border-radius: 8px; background: #1a1a1a; border: 1px solid var(--border); text-align: center;">
                 <div style="font-size: 0.8em; color: #888; text-transform: uppercase;">DRM Fix</div>
                 <div id="status_drm" style="font-weight: bold; color: var(--danger); margin-top: 5px; background: rgba(239, 68, 68, 0.1); padding: 5px; border-radius: 4px;">INACTIVE</div>
             </div>
@@ -1679,28 +1688,31 @@ class WebServer(
     </div>
     <div id="guide" class="content" role="tabpanel" aria-labelledby="tab_guide">
         <div class="panel">
-            <h3>Encrypted Keybox Distribution</h3>
-            <p>This module supports secure keybox distribution formats to protect key material.</p>
+            <h3>Quick Start & Keybox Guide</h3>
+            <p>Welcome! CleveresTricky helps you manage Keyboxes and bypass Play Integrity checks. Here is how you can use the module effectively:</p>
 
-            <h4>1. .cbox Files</h4>
-            <p>Encrypted containers that require a password. Once unlocked, they are cached securely on your device using hardware encryption (if available).</p>
+            <h4>1. Using Standard Keybox.xml</h4>
+            <p>If you have a standard <code>keybox.xml</code> file, simply drop it into the <code>/data/adb/modules/CleveresTricky/</code> or <code>/data/adb/cleverestricky/</code> directory and reboot. The module will automatically inject the keys to bypass attestation checks. If the Keybox is invalid or revoked, the dashboard will notify you.</p>
 
-            <h4>2. Remote Servers</h4>
-            <p>Fetch keyboxes automatically from community servers. Supports authentication (Tokens, Telegram, etc).</p>
+            <h4>2. Encrypted .cbox Files</h4>
+            <p>For better security, you can use <code>.cbox</code> files. These are encrypted containers that require a password. They keep the raw keys hidden and are cached securely on your device using Android's hardware keystore.</p>
 
-            <h4>3. Creating .cbox Files</h4>
-            <p>Use the <b>Encryptor App</b> to create .cbox files from your raw XML keyboxes.</p>
+            <h4>3. Remote Keybox Servers</h4>
+            <p>You can fetch valid keyboxes automatically from community servers without needing to manually find and download them. Head to the Keybox tab and enter the server details. Authentication (Tokens, Telegram, etc.) is supported for private servers.</p>
+
+            <h4>4. Creating .cbox Files</h4>
+            <p>If you are a keybox provider and want to protect your leaks, use the <b>Encryptor App</b>:</p>
             <ul>
                 <li>Generate a signing key in the app.</li>
-                <li>Select your keybox.xml.</li>
-                <li>Set a password and author name.</li>
-                <li>Share the .cbox file and Public Key with users.</li>
+                <li>Select your <code>keybox.xml</code>.</li>
+                <li>Set a secure password and add your author name.</li>
+                <li>Share the <code>.cbox</code> file along with the Public Key so users can verify it's from you.</li>
             </ul>
         </div>
         <div class="panel">
             <h3>Language Support</h3>
-            <p>The module is English-first, but supports community translations.</p>
-            <p>To add a language, place a <code>lang.json</code> file in <code>/data/adb/cleverestricky/</code>.</p>
+            <p>The module is English-first, but fully supports community translations.</p>
+            <p>To add a language, download the template below, translate the values, and place the resulting <code>lang.json</code> file in <code>/data/adb/cleverestricky/</code>. Then click Reload.</p>
             <div class="grid-2">
                 <button onclick="runWithState(this, 'Downloading...', downloadLangTemplate)">Download Template</button>
                 <button onclick="runWithState(this, 'Loading...', loadLanguage)">Reload Language File</button>
