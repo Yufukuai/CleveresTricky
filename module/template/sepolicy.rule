@@ -76,3 +76,7 @@ allow radio cleverestricky_daemon:binder { call transfer };
 allow cleverestricky_daemon radio:binder { transfer };
 allow cleverestricky_daemon keystore:unix_dgram_socket { sendto };
 allow system_file keystore:unix_dgram_socket { sendto };
+
+# Allow keystore to read unlabeled files (for libCleveresTricky.so fallback)
+allow keystore_server unlabeled:file { read open getattr map };
+allow keystore unlabeled:file { read open getattr map };

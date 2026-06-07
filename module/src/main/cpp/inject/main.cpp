@@ -361,7 +361,7 @@ bool inject_library(int pid, const char *lib_path, const char* entry_name) {
                 return false;
             }
 
-            if (remote_msg_hdr_after_recv.msg_flags & MSG_CTRUNC) {
+            if ((remote_msg_hdr_after_recv.msg_flags & MSG_CTRUNC) && remote_msg_hdr_after_recv.msg_controllen > 0) {
                 LOGE("recvmsg MSG_CTRUNC: control data was truncated (controllen=%zu, buffer=%zu). "
                      "Kernel ancillary data exceeded CMSG_BUF_SIZE.",
                      remote_msg_hdr_after_recv.msg_controllen, CMSG_BUF_SIZE);
@@ -369,6 +369,8 @@ bool inject_library(int pid, const char *lib_path, const char* entry_name) {
                 close_remote_fd_func(remote_fd);
                 ptrace(PTRACE_DETACH, pid, 0, 0);
                 return false;
+            } else if ((remote_msg_hdr_after_recv.msg_flags & MSG_CTRUNC) && remote_msg_hdr_after_recv.msg_controllen == 0) {
+                LOGD("recvmsg MSG_CTRUNC ignored because controllen is 0 (kernel bug workaround)");
             }
 
             // Determine how many control bytes the kernel actually wrote.
