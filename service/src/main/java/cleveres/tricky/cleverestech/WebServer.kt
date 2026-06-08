@@ -1184,6 +1184,25 @@ class WebServer(
              }
         }
 
+
+        if (uri == "/api/logs" && method == Method.GET) {
+            return try {
+                val p = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-s", "cleverestricky:V"))
+                val logs = try {
+                    p.inputStream.bufferedReader().use { it.readText() }
+                } catch (e: Exception) {
+                    ""
+                } finally {
+                    try { p.errorStream.readBytes() } catch (_: Exception) {}
+                }
+                p.waitFor()
+                secureResponse(Response.Status.OK, "text/plain", logs.ifBlank { "No logs found." })
+            } catch (e: Exception) {
+                Logger.e("Failed to fetch logs", e)
+                secureResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Failed to fetch logs")
+            }
+        }
+
         if (uri == "/api/stats" && method == Method.GET) {
             val count = fetchTelegramCount()
             val banned = fetchBannedCount()
