@@ -9,7 +9,7 @@
 //   - Blocking I/O (/dev/random) has been replaced with ring::rand::SystemRandom
 //     which is non-blocking, signal-safe, and works on all Android versions.
 
-use std::panic::catch_unwind;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use ring::{rand, rand::SecureRandom, signature};
 use ring::signature::KeyPair;
 use ring::hmac;
@@ -76,7 +76,7 @@ pub extern "C" fn certengine_generate_ec_p256_keypair(
     out_buf_len: usize,
 ) -> usize {
     // Safety: catch_unwind ensures panics do not cross the FFI boundary.
-    let result = catch_unwind(|| {
+    let result = catch_unwind(AssertUnwindSafe(|| {
         let pkcs8 = CertEngine::generate_ec_p256_keypair()
             .unwrap_or_default();
         if pkcs8.is_empty() || out_buf.is_null() || pkcs8.len() > out_buf_len {
@@ -87,7 +87,7 @@ pub extern "C" fn certengine_generate_ec_p256_keypair(
             std::ptr::copy_nonoverlapping(pkcs8.as_ptr(), out_buf, pkcs8.len());
         }
         pkcs8.len()
-    });
+    }));
     result.unwrap_or(0)
 }
 
@@ -102,7 +102,7 @@ pub extern "C" fn certengine_validate_challenge(
     if challenge.is_null() {
         return -22; // INVALID_ARGUMENT
     }
-    let result = catch_unwind(|| {
+    let result = catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: caller guarantees challenge points to at least challenge_len bytes.
         let slice = unsafe { std::slice::from_raw_parts(challenge, challenge_len) };
         let engine = CertEngine::new();
@@ -110,7 +110,7 @@ pub extern "C" fn certengine_validate_challenge(
             Ok(()) => 0i32,
             Err(code) => code,
         }
-    });
+    }));
     result.unwrap_or(-1)
 }
 
