@@ -28,7 +28,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v6
 
       - name: "🐚 Shell Script Linting (Shellcheck)"
         run: |
@@ -142,7 +142,7 @@ jobs:
           java-version: 21
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
