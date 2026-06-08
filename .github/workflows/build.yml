@@ -175,19 +175,19 @@ jobs:
           unzip "$debugPath" -d module-debug
 
       - name: Upload release zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.prepareArtifact.outputs.releaseName }}
           path: "./module-release/*"
 
       - name: Upload debug zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.prepareArtifact.outputs.debugName }}
           path: "./module-debug/*"
 
       - name: Upload Encryptor App
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: EncryptorApp
           path: "./encryptor-app/build/outputs/apk/release/*.apk"
