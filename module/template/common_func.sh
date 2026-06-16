@@ -18,19 +18,22 @@ resetprop_hexpatch() {
     if [ -f /dev/__properties__ ]; then
         local PROPFILE=/dev/__properties__
     else
-        local PROPFILE="/dev/__properties__/$(resetprop -Z "$NAME")"
+        local PROPFILE
+        PROPFILE="/dev/__properties__/$(resetprop -Z "$NAME")"
     fi
     [ ! -f "$PROPFILE" ] && return 3
-    local NAMEOFFSET=$(echo $(strings -t d "$PROPFILE" | grep "$NAME") | cut -d ' ' -f 1)
+    local NAMEOFFSET
+    NAMEOFFSET=$(strings -t d "$PROPFILE" | awk -v name="$NAME" '$0 ~ name {print $1; exit}')
 
     #<hex 2-byte change counter><flags byte><hex length of prop value><prop value + nul padding to 92 bytes><prop name>
-    local NEWHEX="$(printf '%02x' "$NEWLEN")$(printf "$NEWVALUE" | od -A n -t x1 -v | tr -d ' \n')$(printf "%$((92-NEWLEN))s" | sed 's/ /00/g')"
+    local NEWHEX
+    NEWHEX="$(printf '%02x' "$NEWLEN")$(printf '%s' "$NEWVALUE" | od -A n -t x1 -v | tr -d ' \n')$(printf "%$((92-NEWLEN))s" | sed 's/ /00/g')"
 
     printf "Patch '$NAME' to '$NEWVALUE' in '$PROPFILE' @ 0x%08x -> \n[0000??$NEWHEX]\n" $((NAMEOFFSET-96))
 
     echo -ne "\x00\x00" \
         | dd obs=1 count=2 seek=$((NAMEOFFSET-96)) conv=notrunc of="$PROPFILE"
-    echo -ne "$(printf "$NEWHEX" | sed -e 's/.\{2\}/&\\x/g' -e 's/^/\\x/' -e 's/\\x$//')" \
+    echo -ne "$(printf '%s' "$NEWHEX" | sed -e 's/.\{2\}/&\\x/g' -e 's/^/\\x/' -e 's/\\x$//')" \
         | dd obs=1 count=93 seek=$((NAMEOFFSET-93)) conv=notrunc of="$PROPFILE"
 }
 
@@ -38,7 +41,8 @@ resetprop_hexpatch() {
 resetprop_if_diff() {
     local NAME="$1"
     local EXPECTED="$2"
-    local CURRENT="$(resetprop "$NAME")"
+    local CURRENT
+    CURRENT="$(resetprop "$NAME")"
 
     [ -z "$CURRENT" ] || [ "$CURRENT" = "$EXPECTED" ] || $RESETPROP "$NAME" "$EXPECTED"
 }
@@ -73,8 +77,8 @@ download_fail() {
         sleep_pause
         exit 1
     }
-    conflict_module=$(ls /data/adb/modules | grep busybox)
-    for i in $conflict_module; do 
+    for i in /data/adb/modules/*busybox*; do
+        [ -e "$i" ] || continue
         echo "[!] Please remove $i and try again." 
     done
     echo "[!] download failed!"

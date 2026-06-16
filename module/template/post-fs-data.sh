@@ -1,3 +1,4 @@
+#!/system/bin/sh
 MODDIR=${0%/*}
 CONFIG_DIR="/data/adb/cleverestricky"
 
@@ -18,7 +19,8 @@ find "$MODDIR" -maxdepth 1 -name '*.so' -exec chcon u:object_r:cleverestricky_pu
 [ -f "$MODDIR/provision_attestation.sh" ] && chcon u:object_r:cleverestricky_exec:s0 "$MODDIR/provision_attestation.sh" 2>/dev/null
 
 # ===== Property Hiding =====
-. $MODDIR/common_func.sh
+# shellcheck disable=SC1091
+. "$MODDIR/common_func.sh"
 resetprop_if_diff ro.boot.verifiedbootstate green
 resetprop_if_diff ro.boot.flash.locked 1
 resetprop_if_diff ro.boot.veritymode enforcing

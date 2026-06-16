@@ -1,3 +1,4 @@
+#!/system/bin/sh
 # shellcheck disable=SC2034
 SKIPUNZIP=1
 
@@ -58,6 +59,7 @@ if [ ! -f "$TMPDIR/verify.sh" ]; then
   ui_print "! This zip may be corrupted, please try downloading again"
   abort    "*********************************************************"
 fi
+# shellcheck disable=SC1091
 . "$TMPDIR/verify.sh"
 extract "$ZIPFILE" 'customize.sh'  "$TMPDIR/.vunzip"
 extract "$ZIPFILE" 'verify.sh'     "$TMPDIR/.vunzip"
