@@ -17,7 +17,7 @@ endif()
 add_link_options(-Wl,--gc-sections)
 
 # Treat all warnings as errors for C/C++
-add_compile_options(-Werror -Wall -Wextra -Wno-unused-parameter)
+add_compile_options(-Werror -Wall -Wextra -Wno-unused-parameter -fno-rtti)
 
 
 add_library(elf_util STATIC elf_util/elf_util.cpp)
