@@ -2092,15 +2092,17 @@ class WebServer(
         }
 
         async function fetchLogs() {
-            notify('Refreshing...', 'working');
             try {
-                const res = await fetch('/api/logs?token=' + TOKEN);
+                const res = await fetchAuth('/api/logs');
+                if (!res.ok) throw new Error(await res.text());
                 const data = await res.text();
                 const viewer = document.getElementById('logViewer');
                 viewer.value = data;
                 viewer.scrollTop = viewer.scrollHeight;
+                notify('Logs refreshed', 'normal');
             } catch (e) {
-                notify('Failed to load logs', 'error');
+                console.error(e);
+                notify('Failed to load logs: ' + e.message, 'error');
             }
         }
 
@@ -2117,6 +2119,7 @@ class WebServer(
             a.download = "cleverestricky_logs.txt";
             a.click();
             URL.revokeObjectURL(url);
+            notify('Download started', 'normal');
         }
 
         // --- Keys Tab Logic ---
